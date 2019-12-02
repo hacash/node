@@ -24,6 +24,7 @@ func (p2p *P2PManager) allowConnectNodeListenTCP(localaddr *net.UDPAddr, allowad
 	}
 	// start listen
 	//localtcpaddr.IP = net.IPv4zero
+	fmt.Println("net.ListenTCP", localtcpaddr.String())
 	listener, err := net.ListenTCP("tcp", localtcpaddr)
 	if err != nil {
 		fmt.Println("allowConnectNodeListenTCP error:", err)

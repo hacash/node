@@ -42,7 +42,7 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 		}
 		servernodeUdpAddr.Port = peer.udpListenPort
 		//fmt.Println("servernodeUdpAddr.Port = peer.udpListenPort", servernodeUdpAddr.String())
-		socket, err := net.DialUDP("udp4", nil, servernodeUdpAddr)
+		socket, err := net.DialUDP("udp", nil, servernodeUdpAddr)
 		if err != nil || socket == nil {
 			return
 		}
@@ -105,6 +105,7 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 		p2p.peerManager.AddKnownPeerId(newpeerId)
 		// start tcp connect
 		go func() {
+			localtcpaddr.IP = net.IPv4zero
 			// UDP call to out of NAT
 			err := p2p.natPassOutTcpAddr(localtcpaddr, newpeerAddr)
 			if err != nil {
@@ -136,7 +137,8 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 		// notify server node
 		server_udp_addr, _ := net.ResolveUDPAddr("udp", peer.TcpConn.RemoteAddr().String())
 		server_udp_addr.Port = peer.udpListenPort
-		socket, err := net.DialUDP("udp4", nil, server_udp_addr)
+
+		socket, err := net.DialUDP("udp", nil, server_udp_addr)
 		if err != nil || socket == nil {
 			return
 		}
@@ -149,8 +151,10 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 		socket.Write(data)
 		socket.Close()
 		// start tcp listen
-		fmt.Println("allowConnectNodeListenTCP ", local_addr.(*net.UDPAddr).String(), "NAT pass", newpeerAddr.String())
-		go p2p.allowConnectNodeListenTCP(local_addr.(*net.UDPAddr), newpeerAddr)
+		lacaltcpaddr := local_addr.(*net.UDPAddr)
+		lacaltcpaddr.IP = net.IPv4zero
+		fmt.Println("allowConnectNodeListenTCP ", lacaltcpaddr.String(), "NAT pass", newpeerAddr.String())
+		go p2p.allowConnectNodeListenTCP(lacaltcpaddr, newpeerAddr)
 		return
 	}
 

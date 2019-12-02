@@ -118,7 +118,7 @@ func (p2p *P2PManager) handleUDPMessage(addr *net.UDPAddr, msgty uint16, msgbody
 func (p2p *P2PManager) reportTCPListen(target_udp_addr *net.UDPAddr) {
 
 	// UDP call to out of NAT
-	socket, err := net.DialUDP("udp4",
+	socket, err := net.DialUDP("udp",
 		&net.UDPAddr{net.IPv4zero, p2p.config.TcpListenPort, ""},
 		target_udp_addr,
 	)
@@ -163,13 +163,17 @@ func (p2p *P2PManager) natPassOut(localaddr *net.UDPAddr, allowaddr *net.UDPAddr
 	fmt.Println("natPassOut", localaddr.String(), "=>", allowaddr.String())
 
 	// UDP call to out of NAT
-	socket, err := net.DialUDP("udp4", localaddr, allowaddr)
+	socket, err := net.DialUDP("udp", localaddr, allowaddr)
 	if err != nil {
-		fmt.Println("natPassOut error", err)
+		fmt.Println("natPassOut DialUDP error", err)
 		//os.Exit(1)
 		return err
 	}
 	_, err = socket.Write([]byte("nat_pass"))
+	if err != nil {
+		fmt.Println("natPassOut socket.Write error", err)
+		return err
+	}
 	err = socket.Close()
 	if err != nil {
 		return err

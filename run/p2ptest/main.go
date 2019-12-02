@@ -116,6 +116,7 @@ func startnode(port int) {
 	// connect test
 	if port != 7001 {
 		rmtaddr, _ := net.ResolveTCPAddr("tcp", "182.92.163.225:7001")
+		//rmtaddr, _ := net.ResolveTCPAddr("tcp", "0.0.0.0:7001")
 		go pm.TryConnectToNode(nil, rmtaddr)
 		//go pm.TryConnectToNode(nil, &net.TCPAddr{net.IPv4zero, 7001, ""})
 	}
@@ -125,7 +126,7 @@ func startnode(port int) {
 func test_tcp_udp() {
 
 	// UDP call to out of NAT
-	socket, err := net.DialUDP("udp4",
+	socket, err := net.DialUDP("udp",
 		&net.UDPAddr{net.IPv4zero, 8181, ""},
 		&net.UDPAddr{net.IPv4zero, 8182, ""},
 	)
@@ -253,7 +254,7 @@ func startServiceTcp() {
 
 func startClientUDP() {
 	// 创建连接
-	socket, err := net.DialUDP("udp4", nil, &net.UDPAddr{
+	socket, err := net.DialUDP("udp", nil, &net.UDPAddr{
 		IP:   net.IPv4(0, 0, 0, 0),
 		Port: 8181,
 	})
