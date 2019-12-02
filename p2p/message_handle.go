@@ -3,6 +3,7 @@ package p2p
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"net"
 	"strings"
 	"time"
@@ -83,7 +84,7 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 
 	if msgty == MsgTypeAllowOtherNodeToConnect {
 
-		//fmt.Println("MsgTypeAllowOtherNodeToConnect", len(msgbody), msgbody)
+		fmt.Println("MsgTypeAllowOtherNodeToConnect", len(msgbody), msgbody)
 
 		msglen := 32 + 21 // public ip:port
 		if len(msgbody) != msglen {
@@ -94,7 +95,6 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 		if !ldok {
 			return // not find or time out
 		}
-		p2p.peerManager.waitToConnectNode.Delete(string(newpeerId)) // clear data
 		localaddr := waitnode.(net.Addr)
 		localtcpaddr, _ := net.ResolveTCPAddr("tcp", localaddr.String())
 		newpeerAddrStr := strings.Trim(string(msgbody[32:53]), string([]byte{0}))
@@ -104,13 +104,23 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 		}
 		p2p.peerManager.AddKnownPeerId(newpeerId)
 		// start tcp connect
-		go p2p.TryConnectToNode(localtcpaddr, newpeerAddr)
+		go func() {
+			// UDP call to out of NAT
+			err := p2p.natPassOutTcpAddr(localtcpaddr, newpeerAddr)
+			if err != nil {
+				return
+			}
+			<-time.Tick(time.Second * 3)
+			go p2p.TryConnectToNode(localtcpaddr, newpeerAddr)
+			// clear data
+			p2p.peerManager.waitToConnectNode.Delete(string(newpeerId))
+		}()
 	}
 
 	// other want connect
 	if msgty == MsgTypeOtherNodeWantToConnect {
 
-		//fmt.Println("MsgTypeOtherNodeWantToConnect", len(msgbody), string(msgbody))
+		fmt.Println("MsgTypeOtherNodeWantToConnect", len(msgbody), string(msgbody))
 
 		msglen := 32 + 21 // public ip:port
 		if len(msgbody) != msglen {
@@ -139,7 +149,7 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 		socket.Write(data)
 		socket.Close()
 		// start tcp listen
-		//fmt.Println("allowConnectNodeListenTCP ", local_addr.(*net.UDPAddr).String(), "NAT pass", newpeerAddr.String())
+		fmt.Println("allowConnectNodeListenTCP ", local_addr.(*net.UDPAddr).String(), "NAT pass", newpeerAddr.String())
 		go p2p.allowConnectNodeListenTCP(local_addr.(*net.UDPAddr), newpeerAddr)
 		return
 	}

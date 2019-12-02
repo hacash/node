@@ -61,7 +61,7 @@ func (pm *PeerManager) loop() {
 	for {
 		select {
 		case <-aaa.C:
-			fmt.Println("5 Minute Ticker")
+			//fmt.Println("5 Minute Ticker")
 			break
 		}
 	}

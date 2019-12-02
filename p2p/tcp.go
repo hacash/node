@@ -14,20 +14,16 @@ func (p2p *P2PManager) allowConnectNodeListenTCP(localaddr *net.UDPAddr, allowad
 	var localtcpaddr *net.TCPAddr
 
 	// UDP call to out of NAT
-	socket, err := net.DialUDP("udp4", localaddr, allowaddr)
-	if err != nil {
-		fmt.Println("allowConnectNodeListenTCP error", err)
-		//os.Exit(1)
-		return
-	}
-	localtcpaddr, err = net.ResolveTCPAddr("tcp", socket.LocalAddr().String())
+	err := p2p.natPassOut(localaddr, allowaddr)
 	if err != nil {
 		return
 	}
-	socket.Write([]byte("nat_pass"))
-	socket.Close()
-
+	localtcpaddr, err = net.ResolveTCPAddr("tcp", localaddr.String())
+	if err != nil {
+		return
+	}
 	// start listen
+	localtcpaddr.IP = net.IPv4zero
 	listener, err := net.ListenTCP("tcp", localtcpaddr)
 	if err != nil {
 		fmt.Println("allowConnectNodeListenTCP error:", err)
@@ -39,6 +35,7 @@ func (p2p *P2PManager) allowConnectNodeListenTCP(localaddr *net.UDPAddr, allowad
 	go func() {
 		<-time.Tick(time.Second * 99)
 		if gotconn == nil {
+			fmt.Println("allowConnectNodeListenTCP time out listener.Close()")
 			listener.Close()
 			// time out to close listener
 		}

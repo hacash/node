@@ -57,7 +57,34 @@ func (p2p *P2PManager) handleUDPMessage(addr *net.UDPAddr, msgty uint16, msgbody
 		msgbody := make([]byte, 32+21)
 		copy(msgbody[0:32], listenpeerid)
 		copy(msgbody[32:53], addr.String())
+
+		fmt.Println("MsgTypeUDPAllowToConnectNode", addr.String())
+
 		tarpeer.SendMsg(MsgTypeAllowOtherNodeToConnect, msgbody)
+		return
+	}
+
+	if msgty == MsgTypeUDPWantToConnectNode {
+		msglen := 32 + 32
+		if len(msgbody) != msglen {
+			return
+		}
+		callpeerid := msgbody[0:32]
+		tarpeerid := msgbody[32:64]
+		tarpeer, _ := p2p.peerManager.GetPeerByID(tarpeerid)
+		if tarpeer == nil {
+			//fmt.Println("MsgTypeUDPWantToConnectNode   GetPeerByID(tarpeerid)  not find", hex.EncodeToString(tarpeerid))
+			return
+		}
+		tarmsgbody := make([]byte, 32+21) // 255.255.255.255:65535
+		copy(tarmsgbody[0:32], callpeerid)
+		copy(tarmsgbody[32:53], addr.String())
+
+		fmt.Println("MsgTypeUDPWantToConnectNode", addr.String())
+
+		// send msg
+		//fmt.Println("tarpeer.SendMsg(MsgTypeOtherNodeWantToConnect, tarmsgbody)")
+		tarpeer.SendMsg(MsgTypeOtherNodeWantToConnect, tarmsgbody)
 		return
 	}
 
@@ -83,27 +110,6 @@ func (p2p *P2PManager) handleUDPMessage(addr *net.UDPAddr, msgty uint16, msgbody
 		}
 		//
 
-		return
-	}
-
-	if msgty == MsgTypeUDPWantToConnectNode {
-		msglen := 32 + 32
-		if len(msgbody) != msglen {
-			return
-		}
-		callpeerid := msgbody[0:32]
-		tarpeerid := msgbody[32:64]
-		tarpeer, _ := p2p.peerManager.GetPeerByID(tarpeerid)
-		if tarpeer == nil {
-			//fmt.Println("MsgTypeUDPWantToConnectNode   GetPeerByID(tarpeerid)  not find", hex.EncodeToString(tarpeerid))
-			return
-		}
-		tarmsgbody := make([]byte, 32+21) // 255.255.255.255:65535
-		copy(tarmsgbody[0:32], callpeerid)
-		copy(tarmsgbody[32:53], addr.String())
-		// send msg
-		//fmt.Println("tarpeer.SendMsg(MsgTypeOtherNodeWantToConnect, tarmsgbody)")
-		tarpeer.SendMsg(MsgTypeOtherNodeWantToConnect, tarmsgbody)
 		return
 	}
 
@@ -135,4 +141,38 @@ func (p2p *P2PManager) reportTCPListen(target_udp_addr *net.UDPAddr) {
 	//socket.Close()
 
 	fmt.Println("reportTCPListen", target_udp_addr.String())
+}
+
+func (p2p *P2PManager) natPassOutTcpAddr(localaddr *net.TCPAddr, allowaddr *net.TCPAddr) error {
+
+	localudpaddr, err := net.ResolveUDPAddr("udp", localaddr.String())
+	if err != nil {
+		return err
+	}
+	allowudpaddr, err := net.ResolveUDPAddr("udp", allowaddr.String())
+	if err != nil {
+		return err
+	}
+	// UDP call to out of NAT
+	return p2p.natPassOut(localudpaddr, allowudpaddr)
+}
+
+func (p2p *P2PManager) natPassOut(localaddr *net.UDPAddr, allowaddr *net.UDPAddr) error {
+
+	localaddr.IP = net.IPv4zero
+	fmt.Println("natPassOut", localaddr.String(), "=>", allowaddr.String())
+
+	// UDP call to out of NAT
+	socket, err := net.DialUDP("udp4", localaddr, allowaddr)
+	if err != nil {
+		fmt.Println("natPassOut error", err)
+		//os.Exit(1)
+		return err
+	}
+	_, err = socket.Write([]byte("nat_pass"))
+	err = socket.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }

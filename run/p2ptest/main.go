@@ -12,6 +12,8 @@ import (
 /**
 
 go build -o test1 run/p2ptest/main.go && ./test1
+go build -o test2 run/p2ptest/main.go && ./test2
+go build -o test3 run/p2ptest/main.go && ./test3
 
 
 */
