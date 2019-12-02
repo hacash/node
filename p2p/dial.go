@@ -159,7 +159,7 @@ func (p2p *P2PManager) natPassOutTcpAddr(localaddr *net.TCPAddr, allowaddr *net.
 
 func (p2p *P2PManager) natPassOut(localaddr *net.UDPAddr, allowaddr *net.UDPAddr) error {
 
-	localaddr.IP = net.IPv4zero
+	//localaddr.IP = net.IPv4zero
 	fmt.Println("natPassOut", localaddr.String(), "=>", allowaddr.String())
 
 	// UDP call to out of NAT
