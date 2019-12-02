@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"time"
 )
@@ -55,7 +56,9 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 		socket.Write(data) /// Send MsgTypeUDPWantToConnectNode
 		socket.Close()
 		// save addr
-		p2p.peerManager.waitToConnectNode.Store(string(newpeerid), udplocaladdr)
+		laddr := udplocaladdr.(*net.UDPAddr)
+		laddr.IP = net.IPv4zero
+		p2p.peerManager.waitToConnectNode.Store(string(newpeerid), laddr)
 		go func() {
 			<-time.Tick(time.Second * 77)
 			// check connect to node to delete
@@ -97,6 +100,7 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 		}
 		localaddr := waitnode.(net.Addr)
 		localtcpaddr, _ := net.ResolveTCPAddr("tcp", localaddr.String())
+		localtcpaddr.IP = net.IPv4zero
 		newpeerAddrStr := strings.Trim(string(msgbody[32:53]), string([]byte{0}))
 		newpeerAddr, e := net.ResolveTCPAddr("tcp", newpeerAddrStr)
 		if e != nil {
@@ -105,14 +109,15 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 		p2p.peerManager.AddKnownPeerId(newpeerId)
 		// start tcp connect
 		go func() {
-			localtcpaddr.IP = net.IPv4zero
 			// UDP call to out of NAT
 			err := p2p.natPassOutTcpAddr(localtcpaddr, newpeerAddr)
 			if err != nil {
 				return
 			}
 			<-time.Tick(time.Second * 3)
-			go p2p.TryConnectToNode(localtcpaddr, newpeerAddr)
+			newpeerAddr.IP = net.IPv4zero
+			p2p.natPassOutTcpAddr(localtcpaddr, newpeerAddr)
+			//go p2p.TryConnectToNode(localtcpaddr, newpeerAddr)
 			// clear data
 			p2p.peerManager.waitToConnectNode.Delete(string(newpeerId))
 		}()
@@ -151,10 +156,26 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 		socket.Write(data)
 		socket.Close()
 		// start tcp listen
-		lacaltcpaddr := local_addr.(*net.UDPAddr)
-		lacaltcpaddr.IP = net.IPv4zero
-		fmt.Println("allowConnectNodeListenTCP ", lacaltcpaddr.String(), "NAT pass", newpeerAddr.String())
-		go p2p.allowConnectNodeListenTCP(lacaltcpaddr, newpeerAddr)
+		localtcpaddr := local_addr.(*net.UDPAddr)
+		localtcpaddr.IP = net.IPv4zero
+		fmt.Println("allowConnectNodeListenTCP ", localtcpaddr.String(), "NAT pass", newpeerAddr.String())
+
+		udpconn, err := net.ListenUDP("udp", localtcpaddr)
+		if err != nil {
+			fmt.Println("startListenUDP error:", err)
+			os.Exit(1)
+		}
+
+		for {
+			data := make([]byte, 1025)
+			rn, rmtaddr, err := udpconn.ReadFromUDP(data)
+			if err != nil {
+				fmt.Println("ReadFromUDP error:", err)
+			}
+			fmt.Println("allowConnectNodeListenTCP udpconn.ReadFromUDP(data)", rmtaddr.String(), string(data[:rn]))
+		}
+
+		//go p2p.allowConnectNodeListenTCP(localtcpaddr, newpeerAddr)
 		return
 	}
 
