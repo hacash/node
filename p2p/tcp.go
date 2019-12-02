@@ -9,9 +9,60 @@ import (
 	"time"
 )
 
+func (p2p *P2PManager) allowConnectNodeListenTCP(localaddr *net.UDPAddr, allowaddr *net.UDPAddr) {
+
+	var localtcpaddr *net.TCPAddr
+
+	// UDP call to out of NAT
+	socket, err := net.DialUDP("udp4", localaddr, allowaddr)
+	if err != nil {
+		fmt.Println("allowConnectNodeListenTCP error", err)
+		//os.Exit(1)
+		return
+	}
+	localtcpaddr, err = net.ResolveTCPAddr("tcp", socket.LocalAddr().String())
+	if err != nil {
+		return
+	}
+	socket.Write([]byte("nat_pass"))
+	socket.Close()
+
+	// start listen
+	listener, err := net.ListenTCP("tcp", localtcpaddr)
+	if err != nil {
+		fmt.Println("allowConnectNodeListenTCP error:", err)
+		return
+	}
+
+	var gotconn net.Conn = nil
+
+	go func() {
+		<-time.Tick(time.Second * 99)
+		if gotconn == nil {
+			listener.Close()
+			// time out to close listener
+		}
+	}()
+
+	//fmt.Println("allowConnectNodeListenTCP  ok!!!")
+
+	conn, err := listener.Accept()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	gotconn = conn
+	p2p.handleNewConn(conn)
+	// close listener
+	listener.Close()
+	return
+}
+
 func (p2p *P2PManager) startListenTCP() {
 
 	listener, err := net.ListenTCP("tcp", &net.TCPAddr{net.IPv4zero, p2p.config.TcpListenPort, ""})
+	//laddr := net.TCPAddr{net.IPv4zero, p2p.config.TcpListenPort, ""}
+	//listener, err := reuseport.Listen("tcp", laddr.String())
 	if err != nil {
 		fmt.Println("startListenTCP error:", err)
 		os.Exit(1)
@@ -23,7 +74,7 @@ func (p2p *P2PManager) startListenTCP() {
 		conn, err := listener.Accept()
 		if err != nil {
 			fmt.Println(err)
-			continue
+			break
 		}
 		go p2p.handleNewConn(conn)
 	}
@@ -34,13 +85,14 @@ func (p2p *P2PManager) handleNewConn(conn net.Conn) {
 
 	peer := NewPeer(nil, "")
 
-	fmt.Println("handleNewConn NewPeer RemoteAddr", conn.RemoteAddr().String())
+	fmt.Println("handleNewConn LocalAddr", conn.LocalAddr().String(), "RemoteAddr", conn.RemoteAddr().String())
 
 	peer.TcpConn = conn
 	// time out for sign up
 	go func() {
-		<-time.Tick(time.Second * 15)
-		if peer.Id == nil {
+		<-time.Tick(time.Second * 35)
+		if len(peer.Id) == 0 {
+			fmt.Println("peer.Close() <- time.Tick(time.Second * 35)")
 			peer.Close() // drop peer and close connect at time out
 		}
 	}()
@@ -49,7 +101,7 @@ func (p2p *P2PManager) handleNewConn(conn net.Conn) {
 	//fmt.Println("Connect Remote Addr", RemoteAddr)
 
 	// handshake
-	p2p.sendHandShakeMessageToConn(conn)
+	go p2p.sendHandShakeMessageToConn(conn)
 
 	// read msg
 	segdata := make([]byte, 4069)
@@ -60,7 +112,7 @@ func (p2p *P2PManager) handleNewConn(conn net.Conn) {
 		if !notreadwait {
 			rn, e1 := conn.Read(segdata)
 			if e1 != nil {
-				//fmt.Println(err)
+				fmt.Println(e1)
 				break
 			}
 			if rn <= 0 {
@@ -103,13 +155,16 @@ func (p2p *P2PManager) handleNewConn(conn net.Conn) {
 		//fmt.Println("p2p.headleMessage", msgType, msgBody)
 		// deal real msg
 		go p2p.headleMessage(peer, msgType, msgBody)
+		// reset
+		if !notreadwait {
+			holdbuf.Truncate(0) // clear
+		}
 
 	}
 
 	// msg error and drop peer
-	fmt.Println("handleNewConn DropPeer", peer.Name)
-
 	if peer.Id != nil {
+		fmt.Println("handleNewConn DropPeer", peer.Name)
 		p2p.peerManager.DropPeer(peer)
 	}
 
@@ -124,7 +179,7 @@ func (p2p *P2PManager) sendHandShakeMessageToConn(conn net.Conn) {
 
 	binary.BigEndian.PutUint16(data[0:2], P2PMustVersion)
 	binary.BigEndian.PutUint16(data[2:4], uint16(p2p.config.TcpListenPort))
-	binary.BigEndian.PutUint16(data[4:6], uint16(p2p.config.TcpListenPort))
+	binary.BigEndian.PutUint16(data[4:6], uint16(p2p.config.UdpListenPort))
 	copy(data[6:38], p2p.selfPeerId)
 	copy(data[38:70], p2p.selfPeerName)
 

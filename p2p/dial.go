@@ -1,7 +1,9 @@
 package p2p
 
 import (
+	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"os"
@@ -18,14 +20,15 @@ func (p2p *P2PManager) startListenUDP() {
 	for {
 		data := make([]byte, 1025)
 		rn, rmtaddr, err := udpconn.ReadFromUDP(data)
+		//fmt.Println("udpconn.ReadFromUDP(data)", rmtaddr.String(), data[0:rn])
 		if err != nil {
 			continue
 		}
 		if rn > 1024 || rn < 2 {
 			continue
 		}
-		msgtype := binary.BigEndian.Uint16(data[:2])
-		msgbody := data[2:]
+		msgtype := binary.BigEndian.Uint16(data[0:2])
+		msgbody := data[2:rn]
 
 		go p2p.handleUDPMessage(rmtaddr, msgtype, msgbody)
 
@@ -33,6 +36,30 @@ func (p2p *P2PManager) startListenUDP() {
 }
 
 func (p2p *P2PManager) handleUDPMessage(addr *net.UDPAddr, msgty uint16, msgbody []byte) {
+
+	//fmt.Println("handleUDPMessage", msgty, len(msgbody), msgbody)
+
+	if msgty == MsgTypeUDPAllowToConnectNode {
+		msglen := 32 + 32
+		if len(msgbody) != msglen {
+			return
+		}
+		listenpeerid := msgbody[0:32]
+		tarpeerid := msgbody[32:64]
+		if bytes.Compare(p2p.selfPeerId, tarpeerid) == 0 {
+			return // is my self
+		}
+		tarpeer, _ := p2p.peerManager.GetPeerByID(tarpeerid)
+		if tarpeer == nil {
+			return // not find
+		}
+		// send msg
+		msgbody := make([]byte, 32+21)
+		copy(msgbody[0:32], listenpeerid)
+		copy(msgbody[32:53], addr.String())
+		tarpeer.SendMsg(MsgTypeAllowOtherNodeToConnect, msgbody)
+		return
+	}
 
 	if msgty == MsgTypeReportTCPListenPort {
 		msglen := 32 + 2
@@ -44,6 +71,7 @@ func (p2p *P2PManager) handleUDPMessage(addr *net.UDPAddr, msgty uint16, msgbody
 
 		tarpeer, _ := p2p.peerManager.GetPeerByID(tarpeerid)
 		if tarpeer == nil {
+			fmt.Println("not find peer id", hex.EncodeToString(tarpeerid))
 			return
 		}
 		// check node ip is public ?
@@ -58,22 +86,53 @@ func (p2p *P2PManager) handleUDPMessage(addr *net.UDPAddr, msgty uint16, msgbody
 		return
 	}
 
-	if msgty == MsgTypeWantToConnectNode {
-
-		msglen := 32
+	if msgty == MsgTypeUDPWantToConnectNode {
+		msglen := 32 + 32
 		if len(msgbody) != msglen {
 			return
 		}
-		tarpeerid := msgbody[0:32]
+		callpeerid := msgbody[0:32]
+		tarpeerid := msgbody[32:64]
 		tarpeer, _ := p2p.peerManager.GetPeerByID(tarpeerid)
 		if tarpeer == nil {
+			//fmt.Println("MsgTypeUDPWantToConnectNode   GetPeerByID(tarpeerid)  not find", hex.EncodeToString(tarpeerid))
 			return
 		}
-		tarmsgbody := make([]byte, 21) // 255.255.255.255:65535
-		copy(tarmsgbody, addr.String())
+		tarmsgbody := make([]byte, 32+21) // 255.255.255.255:65535
+		copy(tarmsgbody[0:32], callpeerid)
+		copy(tarmsgbody[32:53], addr.String())
 		// send msg
+		//fmt.Println("tarpeer.SendMsg(MsgTypeOtherNodeWantToConnect, tarmsgbody)")
 		tarpeer.SendMsg(MsgTypeOtherNodeWantToConnect, tarmsgbody)
 		return
 	}
 
+}
+
+func (p2p *P2PManager) reportTCPListen(target_udp_addr *net.UDPAddr) {
+
+	// UDP call to out of NAT
+	socket, err := net.DialUDP("udp4",
+		&net.UDPAddr{net.IPv4zero, p2p.config.TcpListenPort, ""},
+		target_udp_addr,
+	)
+	//laddr := net.UDPAddr{net.IPv4zero, p2p.config.TcpListenPort, ""}
+	//socket, err := reuseport.Dial("udp", laddr.String(), target_udp_addr.String())
+	if err != nil {
+		fmt.Println("reportTCPListen DialUDP error", err)
+		//os.Exit(1)
+		return
+	}
+	// send data
+	data := make([]byte, 2+32+2)
+	binary.BigEndian.PutUint16(data[0:2], MsgTypeReportTCPListenPort)
+	copy(data[2:34], p2p.selfPeerId)
+	binary.BigEndian.PutUint16(data[34:36], uint16(p2p.config.TcpListenPort))
+
+	socket.Write(data) /// Send MsgTypeReportTCPListenPort
+	//n, err := socket.Write([]byte("hello!"))
+	//fmt.Println(n, err)
+	//socket.Close()
+
+	fmt.Println("reportTCPListen", target_udp_addr.String())
 }

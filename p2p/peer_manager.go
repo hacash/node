@@ -2,9 +2,11 @@ package p2p
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"github.com/deckarep/golang-set"
 	"sync"
+	"time"
 )
 
 type PeerManagerConfig struct {
@@ -29,6 +31,11 @@ type PeerManager struct {
 
 	peers mapset.Set
 
+	// manager
+	knownPeerIds mapset.Set // set[[]byte] // id.len=32
+
+	waitToConnectNode sync.Map // map[string(target_peer_id)]*net.Addr // local addr
+
 	peersChangeLock sync.Mutex
 }
 
@@ -39,13 +46,53 @@ func NewPeerManager(cnf *PeerManagerConfig, p2p *P2PManager) *PeerManager {
 		RelationshipPeerIDTable: make([][]byte, 0, cnf.RelationshipPeerTableMaxLen),
 		SequentialPeerIDTable:   make([][]byte, 0, cnf.SequentialPeerTableMaxLen),
 		peers:                   mapset.NewSet(),
+		knownPeerIds:            mapset.NewSet(),
 		peersChangeLock:         sync.Mutex{},
 	}
 	return pm
 }
 
-func (p2p *PeerManager) Start() {
+func (pm *PeerManager) Start() {
+	go pm.loop()
+}
 
+func (pm *PeerManager) loop() {
+	aaa := time.NewTicker(time.Minute * 1)
+	for {
+		select {
+		case <-aaa.C:
+			fmt.Println("5 Minute Ticker")
+			break
+		}
+	}
+}
+
+func (pm *PeerManager) AddKnownPeerId(pid []byte) {
+	pm.knownPeerIds.Add(string(pid))
+	if pm.knownPeerIds.Cardinality() > 200 {
+		pm.knownPeerIds.Pop() // remove one
+	}
+}
+
+func (pm *PeerManager) SendFindNewNodeMsgToUnawarePeers(peer *Peer) error {
+	pidstr := string(peer.Id)
+	if pm.knownPeerIds.Contains(pidstr) {
+		return nil // im already known
+	}
+	pm.AddKnownPeerId(peer.Id)
+	// msg body
+	data := bytes.NewBuffer(peer.Id)
+	// send
+	pm.peers.Each(func(i interface{}) bool {
+		p := i.(*Peer)
+		if !p.knownPeerIds.Contains(pidstr) {
+			p.AddKnownPeerId(peer.Id)
+			//fmt.Println("p.SendMsg(MsgTypeDiscoverNewNodeJoin, data.Bytes())  to  ", p.Name)
+			p.SendMsg(MsgTypeDiscoverNewNodeJoin, data.Bytes())
+		}
+		return false
+	})
+	return nil
 }
 
 func (pm *PeerManager) DropPeer(peer *Peer) (bool, error) {
@@ -78,6 +125,7 @@ func (pm *PeerManager) dropPeerUnsafeByID(pid []byte) (bool, error) {
 }
 
 func (pm *PeerManager) addPeerSuccess(peer *Peer) (bool, error) {
+	fmt.Println("addPeerSuccess", hex.EncodeToString(peer.Id))
 	pm.peers.Add(peer)
 	return true, nil
 }
@@ -85,6 +133,19 @@ func (pm *PeerManager) addPeerSuccess(peer *Peer) (bool, error) {
 func (pm *PeerManager) AddPeer(peer *Peer) (bool, error) {
 	pm.peersChangeLock.Lock()
 	defer pm.peersChangeLock.Unlock()
+
+	// check have
+	havp, err := pm.GetPeerByID(peer.Id)
+	if err != nil {
+		return false, err
+	}
+	if havp != nil {
+		// already have id
+		peer.SendMsg(MsgTypeConnectRefuse, nil)
+		peer.Close()
+		return false, nil
+	}
+
 	// add
 	if len(pm.SequentialPeerIDTable) < pm.config.SequentialPeerTableMaxLen {
 		pm.SequentialPeerIDTable = append(pm.SequentialPeerIDTable, peer.Id)
@@ -123,7 +184,6 @@ func (pm *PeerManager) GetPeerByID(pid []byte) (*Peer, error) {
 	for _, p := range ps {
 		peer := p.(*Peer)
 		if bytes.Compare(peer.Id, pid) == 0 {
-			pm.peers.Remove(peer)
 			return peer, nil
 		}
 	}

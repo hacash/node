@@ -12,15 +12,20 @@ const (
 
 	MsgTypeHandShake = uint16(3)
 
-	MsgTypeOtherNodeWantToConnect = uint16(4)
+	MsgTypeOtherNodeWantToConnect  = uint16(4)
+	MsgTypeAllowOtherNodeToConnect = uint16(5)
 
-	MsgTypeNotifyIsPublicNode = uint16(5)
+	MsgTypeNotifyIsPublicNode = uint16(6)
 
-	MsgTypeDiscoverNewNodeJoin = uint16(6)
+	MsgTypeDiscoverNewNodeJoin = uint16(7)
+
+	MsgTypeConnectRefuse = uint16(8)
 
 	// udp dial
-	MsgTypeReportTCPListenPort = uint16(20001)
-	MsgTypeWantToConnectNode   = uint16(20002)
+	MsgTypeUDPWantToConnectNode  = uint16(20001)
+	MsgTypeUDPAllowToConnectNode = uint16(20002)
+
+	MsgTypeReportTCPListenPort = uint16(20003)
 
 	// other data
 	MsgTypeData = uint16(65535)

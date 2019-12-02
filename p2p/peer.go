@@ -2,6 +2,8 @@ package p2p
 
 import (
 	"encoding/binary"
+	"fmt"
+	"github.com/deckarep/golang-set"
 	"net"
 	"sync"
 	"time"
@@ -18,7 +20,8 @@ type Peer struct {
 	tcpListenPort int
 	udpListenPort int
 
-	knownPeerKnowledgeDuplicateRemoval sync.Map // map[string]set[string(byte)]
+	knownPeerIds                       mapset.Set // set[string([32]byte)] // string key
+	knownPeerKnowledgeDuplicateRemoval sync.Map   // map[string]set[string(byte)]
 
 	activeTime time.Time // check live
 }
@@ -30,6 +33,7 @@ func NewPeer(id []byte, name string) *Peer {
 		PublicListenTcpAddr: nil,
 		tcpListenPort:       0,
 		udpListenPort:       0,
+		knownPeerIds:        mapset.NewSet(),
 		activeTime:          time.Now(),
 	}
 }
@@ -38,6 +42,13 @@ func (p *Peer) Close() {
 	if p.TcpConn != nil {
 		p.TcpConn.Close()
 		p.TcpConn = nil
+	}
+}
+
+func (p *Peer) AddKnownPeerId(pid []byte) {
+	p.knownPeerIds.Add(string(pid))
+	if p.knownPeerIds.Cardinality() > 200 {
+		p.knownPeerIds.Pop() // remove one
 	}
 }
 
@@ -64,6 +75,7 @@ func (p *Peer) SendMsg(ty uint16, msgbody []byte) error {
 	if p.TcpConn != nil {
 		_, e := p.TcpConn.Write(data)
 		if e != nil {
+			fmt.Println("SendMsg error", e)
 			return e
 		}
 	}

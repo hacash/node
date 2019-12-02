@@ -3,6 +3,7 @@ package p2p
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"net"
 	"sync"
 )
@@ -44,7 +45,9 @@ func NewP2PManager(cnf *P2PManagerConfig, pmcnf *PeerManagerConfig) (*P2PManager
 	// test
 	p2p.selfPeerId, _ = hex.DecodeString("12a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5")
 	rand.Read(p2p.selfPeerId) // test
-	p2p.selfPeerName = "hcx_test_node"
+	nnn := []byte(hex.EncodeToString(p2p.selfPeerId))
+	p2p.selfPeerName = "hcx_test_node_" + string(nnn[:8])
+	fmt.Println("im: ", p2p.selfPeerName, string(nnn))
 
 	// pmcnf := &PeerManagerConfig{}
 	p2p.peerManager = NewPeerManager(pmcnf, p2p)

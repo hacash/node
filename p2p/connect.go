@@ -14,10 +14,7 @@ func (p2p *P2PManager) TryConnectToNode(local_addr *net.TCPAddr, target_addr *ne
 		return err
 	}
 
-	// hankshake
-	p2p.sendHandShakeMessageToConn(conn)
-
-	// handle msg
+	// hankshake and handle msg
 	p2p.handleNewConn(conn)
 
 	return nil
