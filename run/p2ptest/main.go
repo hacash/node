@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/hacash/node/p2p"
+	"github.com/hacash/node/p2p_other"
 	"log"
 	"net"
 	"os"
@@ -25,7 +26,7 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 
-	fmt.Println("hacash p2p test")
+	fmt.Println("hacash p2p_other test")
 
 	//startServiceUDP()
 	//startClientUDP()
@@ -33,8 +34,8 @@ func main() {
 	//startServiceTcp()
 	//startClientTcp()
 
-	//p2pcnf := p2p.NewP2PManagerConfig()
-	//pm, _ := p2p.NewP2PManager(p2pcnf)
+	//p2pcnf := p2p_other.NewP2PManagerConfig()
+	//pm, _ := p2p_other.NewP2PManager(p2pcnf)
 	//
 	//pm.Start()
 	//
@@ -98,16 +99,35 @@ func main() {
 
 	//test_tcp_udp()
 
-	//startnode(7001)
-	//startnode(7003)
-	//startnode(7005)
-
 	//go start_netpass_server()
 	//go start_netpass_client(9982)
-	go start_netpass_client(9983)
+	//go start_netpass_client(9983)
+
+	//startnode(7001)
+	//startnode(7003)
+	startnode(7005)
 
 	s := <-c
 	fmt.Println("Got signal:", s)
+
+}
+
+func startnode(port int) {
+
+	p2pcnf := p2p.NewP2PManagerConfig()
+	p2pcnf.TCPListenPort = port
+	p2pcnf.UDPListenPort = p2pcnf.TCPListenPort + 1
+	pmcnf := p2p.NewPeerManagerConfig()
+	pm, _ := p2p.NewP2PManager(p2pcnf, pmcnf)
+	pm.Start()
+	// connect test
+	if port != 7001 {
+		//rmtaddr, _ := net.ResolveTCPAddr("tcp", "182.92.163.225:7001")
+		rmtaddr, _ := net.ResolveTCPAddr("tcp", "39.96.212.167:7001")
+		//rmtaddr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:7001")
+		go pm.TryConnectToPeer(nil, rmtaddr)
+		//go pm.TryConnectToNode(nil, &net.TCPAddr{net.IPv4zero, 7001, ""})
+	}
 
 }
 
@@ -121,11 +141,12 @@ func start_netpass_client(port int) {
 	srcAddr := &net.UDPAddr{IP: net.IPv4zero, Port: port} // 注意端口必须固定
 	dstAddr := &net.UDPAddr{IP: net.ParseIP("182.92.163.225"), Port: 9981}
 	//dstAddr := &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 9981}
-	conn, err := net.DialUDP("udp", srcAddr, dstAddr)
+	conn, err := net.ListenUDP("udp", srcAddr)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
-	if _, err = conn.Write([]byte("hello, I'm new peer:" + tag)); err != nil {
+	if _, err = conn.WriteTo([]byte("hello, I'm new peer:"+tag), dstAddr); err != nil {
 		log.Panic(err)
 	}
 	data := make([]byte, 1024)
@@ -133,13 +154,38 @@ func start_netpass_client(port int) {
 	if err != nil {
 		fmt.Printf("error during read: %s", err)
 	}
-	conn.Close()
+	//conn.Close()
 	anotherPeer, _ := net.ResolveUDPAddr("udp", string(data[:n]))
 	fmt.Printf("local:%s server:%s another:%s\n", srcAddr, remoteAddr, anotherPeer.String())
 
 	// 开始打洞
-	bidirectionHole(srcAddr, anotherPeer)
+	//bidirectionHole(srcAddr, anotherPeer)
+	bidirectionHole_v2(conn, anotherPeer)
+}
 
+func bidirectionHole_v2(conn *net.UDPConn, anotherPeer *net.UDPAddr) {
+	// 向另一个peer发送一条udp消息(对方peer的nat设备会丢弃该消息,非法来源),用意是在自身的nat设备打开一条可进入的通道,这样对方peer就可以发过来udp消息
+	if _, err := conn.WriteToUDP([]byte(HAND_SHAKE_MSG), anotherPeer); err != nil {
+		log.Println("send handshake:", err)
+	}
+	go func() {
+		for {
+			time.Sleep(5 * time.Second)
+			fmt.Println("try WriteToUDP ...")
+			if _, err := conn.WriteToUDP([]byte("from ["+tag+"]"), anotherPeer); err != nil {
+				log.Println("send msg fail", err)
+			}
+		}
+	}()
+	for {
+		data := make([]byte, 1024)
+		n, _, err := conn.ReadFromUDP(data)
+		if err != nil {
+			log.Printf("error during read: %s\n", err)
+		} else {
+			log.Printf("收到数据:%s\n", data[:n])
+		}
+	}
 }
 
 func bidirectionHole(srcAddr *net.UDPAddr, anotherAddr *net.UDPAddr) {
@@ -170,7 +216,6 @@ func bidirectionHole(srcAddr *net.UDPAddr, anotherAddr *net.UDPAddr) {
 		}
 	}
 }
-
 func start_netpass_server() {
 
 	listener, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 9981})
@@ -192,7 +237,7 @@ func start_netpass_server() {
 			log.Printf("进行UDP打洞,建立 %s <--> %s 的连接\n", peers[0].String(), peers[1].String())
 			listener.WriteToUDP([]byte(peers[1].String()), &peers[0])
 			listener.WriteToUDP([]byte(peers[0].String()), &peers[1])
-			time.Sleep(time.Second * 8)
+			time.Sleep(time.Second * 188)
 			log.Println("中转服务器退出,仍不影响peers间通信")
 			return
 		}
@@ -200,13 +245,13 @@ func start_netpass_server() {
 
 }
 
-func startnode(port int) {
+func startnode_old(port int) {
 
-	p2pcnf := p2p.NewP2PManagerConfig()
+	p2pcnf := p2p_other.NewP2PManagerConfig()
 	p2pcnf.TcpListenPort = port
 	p2pcnf.UdpListenPort = p2pcnf.TcpListenPort + 1
-	pmcnf := p2p.NewPeerManagerConfig()
-	pm, _ := p2p.NewP2PManager(p2pcnf, pmcnf)
+	pmcnf := p2p_other.NewPeerManagerConfig()
+	pm, _ := p2p_other.NewP2PManager(p2pcnf, pmcnf)
 	pm.Start()
 	// connect test
 	if port != 7001 {

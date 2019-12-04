@@ -3,38 +3,41 @@ package p2p
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/deckarep/golang-set"
+	mapset "github.com/deckarep/golang-set"
 	"net"
 	"sync"
 	"time"
 )
 
 type Peer struct {
+	IsPermitCompleteNode bool // block msg
+
 	Name string
 	Id   []byte // len 32
 
-	PublicListenTcpAddr net.Addr // public tcp listen addr
-
 	TcpConn net.Conn
 
+	publicIPv4    []byte // public IP if is public peer
 	tcpListenPort int
 	udpListenPort int
 
 	knownPeerIds                       mapset.Set // set[string([32]byte)] // string key
 	knownPeerKnowledgeDuplicateRemoval sync.Map   // map[string]set[string(byte)]
 
+	connTime   time.Time
 	activeTime time.Time // check live
+
 }
 
 func NewPeer(id []byte, name string) *Peer {
 	return &Peer{
-		Id:                  id,
-		Name:                name,
-		PublicListenTcpAddr: nil,
-		tcpListenPort:       0,
-		udpListenPort:       0,
-		knownPeerIds:        mapset.NewSet(),
-		activeTime:          time.Now(),
+		IsPermitCompleteNode: false,
+		Id:                   id,
+		Name:                 name,
+		publicIPv4:           nil,
+		tcpListenPort:        0,
+		udpListenPort:        0,
+		knownPeerIds:         mapset.NewSet(),
 	}
 }
 
@@ -43,6 +46,19 @@ func (p *Peer) Close() {
 		p.TcpConn.Close()
 		p.TcpConn = nil
 	}
+	// reset
+	p.IsPermitCompleteNode = false
+}
+
+func (p *Peer) ParseRemotePublicTCPAddress() []byte {
+	if p.publicIPv4 == nil {
+		return nil
+	}
+	bts := make([]byte, 6)
+	copy(bts[0:4], p.publicIPv4)
+	binary.BigEndian.PutUint16(bts[4:6], uint16(p.tcpListenPort))
+	//fmt.Println("ParseRemotePublicTCPAddress", bts)
+	return bts
 }
 
 func (p *Peer) AddKnownPeerId(pid []byte) {
@@ -59,18 +75,18 @@ func (p *Peer) SendMsg(ty uint16, msgbody []byte) error {
 	data := make([]byte, 2)
 	binary.BigEndian.PutUint16(data, ty)
 	var dtlen []byte = nil
-	if msgbody != nil {
-		if ty == MsgTypeData {
-			dtlen = make([]byte, 4)
-			binary.BigEndian.PutUint32(dtlen, uint32(len(msgbody)))
-		} else {
-			dtlen = make([]byte, 2)
-			binary.BigEndian.PutUint16(dtlen, uint16(len(msgbody)))
+	if ty == TCPMsgTypeData {
+		dtlen = make([]byte, 4)
+		binary.BigEndian.PutUint32(dtlen, uint32(len(msgbody)))
+	} else {
+		if len(msgbody) > 65535 {
+			return fmt.Errorf("msg body size overflow 65535.")
 		}
+		dtlen = make([]byte, 2)
+		binary.BigEndian.PutUint16(dtlen, uint16(len(msgbody)))
 	}
 	data = append(data, dtlen...)
 	data = append(data, msgbody...)
-
 	// send data
 	if p.TcpConn != nil {
 		_, e := p.TcpConn.Write(data)

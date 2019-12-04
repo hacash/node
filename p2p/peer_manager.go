@@ -2,22 +2,25 @@ package p2p
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"github.com/deckarep/golang-set"
+	mapset "github.com/deckarep/golang-set"
+	"net"
 	"sync"
 	"time"
 )
 
 type PeerManagerConfig struct {
-	RelationshipPeerTableMaxLen int
-	SequentialPeerTableMaxLen   int
+	PublicPeerGroupMaxLen   int
+	InteriorPeerGroupMaxLen int
+	LookupConnectMaxLen     int
 }
 
 func NewPeerManagerConfig() *PeerManagerConfig {
 	cnf := &PeerManagerConfig{
-		RelationshipPeerTableMaxLen: 12,
-		SequentialPeerTableMaxLen:   8,
+		PublicPeerGroupMaxLen:   15,
+		InteriorPeerGroupMaxLen: 60,
 	}
 	return cnf
 }
@@ -26,10 +29,8 @@ type PeerManager struct {
 	p2p    *P2PManager
 	config *PeerManagerConfig
 
-	RelationshipPeerIDTable [][]byte
-	SequentialPeerIDTable   [][]byte
-
-	peers mapset.Set
+	publicPeerGroup   *PeerGroup
+	interiorPeerGroup *PeerGroup
 
 	// manager
 	knownPeerIds mapset.Set // set[[]byte] // id.len=32
@@ -40,14 +41,20 @@ type PeerManager struct {
 }
 
 func NewPeerManager(cnf *PeerManagerConfig, p2p *P2PManager) *PeerManager {
+	if cnf.PublicPeerGroupMaxLen < 3 || cnf.InteriorPeerGroupMaxLen < 3 {
+		panic("PublicPeerGroupMaxLen or InteriorPeerGroupMaxLen cannot less than 3.")
+	}
+	ppgmlr := cnf.PublicPeerGroupMaxLen / 3 * 2
+	ppgmls := cnf.PublicPeerGroupMaxLen - ppgmlr
+	ipgmlr := cnf.InteriorPeerGroupMaxLen / 3 * 2
+	ipgmls := cnf.InteriorPeerGroupMaxLen - ipgmlr
 	pm := &PeerManager{
-		p2p:                     p2p,
-		config:                  cnf,
-		RelationshipPeerIDTable: make([][]byte, 0, cnf.RelationshipPeerTableMaxLen),
-		SequentialPeerIDTable:   make([][]byte, 0, cnf.SequentialPeerTableMaxLen),
-		peers:                   mapset.NewSet(),
-		knownPeerIds:            mapset.NewSet(),
-		peersChangeLock:         sync.Mutex{},
+		p2p:               p2p,
+		config:            cnf,
+		publicPeerGroup:   NewPeerGroup(p2p.selfPeerId, ppgmlr, ppgmls),
+		interiorPeerGroup: NewPeerGroup(p2p.selfPeerId, ipgmlr, ipgmls),
+		knownPeerIds:      mapset.NewSet(),
+		peersChangeLock:   sync.Mutex{},
 	}
 	return pm
 }
@@ -57,14 +64,90 @@ func (pm *PeerManager) Start() {
 }
 
 func (pm *PeerManager) loop() {
-	aaa := time.NewTicker(time.Minute * 1)
+
+	activePeerSendPingTiker := time.NewTicker(time.Minute * 15)
+	dropNotActivePeerTicker := time.NewTicker(time.Minute * 20)
+
 	for {
 		select {
-		case <-aaa.C:
-			//fmt.Println("5 Minute Ticker")
-			break
+
+		case <-dropNotActivePeerTicker.C:
+			curt := time.Now()
+			peers := pm.publicPeerGroup.peers.ToSlice()
+			peers = append(pm.publicPeerGroup.peers.ToSlice(), peers...)
+			go func() {
+				for _, p := range peers {
+					peer := p.(*Peer)
+					if peer.activeTime.Add(time.Minute * 25).Before(curt) {
+						pm.DropPeer(peer)
+						peer.Close()
+					}
+				}
+			}()
+
+		case <-activePeerSendPingTiker.C:
+			curt := time.Now()
+			peers := pm.publicPeerGroup.peers.ToSlice()
+			peers = append(pm.publicPeerGroup.peers.ToSlice(), peers...)
+			go func() {
+				for _, p := range peers {
+					peer := p.(*Peer)
+					if peer.activeTime.Add(time.Minute * 17).Before(curt) {
+						peer.SendMsg(TCPMsgTypePing, nil)
+					}
+				}
+			}()
 		}
 	}
+}
+
+func (pm *PeerManager) DropPeer(peer *Peer) error {
+	pm.peersChangeLock.Lock()
+	defer pm.peersChangeLock.Unlock()
+
+	_, err := pm.publicPeerGroup.dropPeerUnsafe(peer)
+	if err != nil {
+		return err
+	}
+	_, err = pm.interiorPeerGroup.dropPeerUnsafe(peer)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pm *PeerManager) dropPeerUnsafeByID(pid []byte) error {
+	pm.peersChangeLock.Lock()
+	defer pm.peersChangeLock.Unlock()
+
+	pm.publicPeerGroup.dropPeerUnsafeByID(pid)
+	pm.interiorPeerGroup.dropPeerUnsafeByID(pid)
+	return nil
+}
+
+func (pm *PeerManager) AddPeer(peer *Peer) error {
+	pm.peersChangeLock.Lock()
+	defer pm.peersChangeLock.Unlock()
+
+	if peer.publicIPv4 == nil {
+		pm.interiorPeerGroup.AddPeer(peer)
+	} else {
+		pm.publicPeerGroup.AddPeer(peer)
+	}
+	return nil
+}
+
+func (pm *PeerManager) GetPeerByID(pid []byte) *Peer {
+
+	peer, _ := pm.publicPeerGroup.GetPeerByID(pid)
+	if peer != nil {
+		return peer
+	}
+	peer, _ = pm.interiorPeerGroup.GetPeerByID(pid)
+	if peer != nil {
+		return peer
+	}
+	return nil // not find
 }
 
 func (pm *PeerManager) AddKnownPeerId(pid []byte) {
@@ -74,118 +157,71 @@ func (pm *PeerManager) AddKnownPeerId(pid []byte) {
 	}
 }
 
-func (pm *PeerManager) SendFindNewNodeMsgToUnawarePeers(peer *Peer) error {
-	pidstr := string(peer.Id)
+func (pm *PeerManager) GetAllCurrentConnectedPublicPeerAddressBytes() []byte {
+	peers := pm.publicPeerGroup.peers.ToSlice()
+	addrsbytes := make([]byte, 6*len(peers))
+	for i, p := range peers {
+		peer := p.(*Peer)
+		addrbts := peer.ParseRemotePublicTCPAddress()
+		copy(addrsbytes[i*6:i*6+6], addrbts)
+	}
+	return addrsbytes
+}
+
+func (pm *PeerManager) CheckHasConnectedWithRemotePublicAddr(tcpaddr *net.TCPAddr) bool {
+
+	tartcpaddr := make([]byte, 6)
+	copy(tartcpaddr[0:4], tcpaddr.IP.To4())
+	binary.BigEndian.PutUint16(tartcpaddr[4:6], uint16(tcpaddr.Port))
+	//
+	peers := pm.publicPeerGroup.peers.ToSlice()
+	for _, p := range peers {
+		pipport := p.(*Peer).ParseRemotePublicTCPAddress()
+		if pipport != nil {
+			if bytes.Compare(tartcpaddr, pipport) == 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (pm *PeerManager) BroadcastFindNewNodeMsgToUnawarePublicPeers(peer *Peer) error {
+	//fmt.Println("BroadcastFindNewNodeMsgToUnawarePublicPeers", peer.ParseRemotePublicTCPAddress())
+	return pm.BroadcastFindNewNodeMsgToUnawarePublicPeersByBytes(peer.Id, peer.ParseRemotePublicTCPAddress())
+}
+
+func (pm *PeerManager) BroadcastFindNewNodeMsgToUnawarePublicPeersByBytes(peerId []byte, ipport []byte) error {
+	if len(peerId) != 16 || len(ipport) != 6 {
+		return fmt.Errorf("data len error.")
+	}
+	pidstr := string(peerId)
 	if pm.knownPeerIds.Contains(pidstr) {
 		return nil // im already known
 	}
-	pm.AddKnownPeerId(peer.Id)
+	pm.AddKnownPeerId(peerId)
 	// msg body
-	data := bytes.NewBuffer(peer.Id)
-	// send
-	pm.peers.Each(func(i interface{}) bool {
+	data := bytes.NewBuffer(peerId) // len + 16
+	data.Write(ipport)              // len + 6
+	// send publicPeerGroup
+	pm.publicPeerGroup.peers.Each(func(i interface{}) bool {
 		p := i.(*Peer)
-		if !p.knownPeerIds.Contains(pidstr) {
-			p.AddKnownPeerId(peer.Id)
-			//fmt.Println("p.SendMsg(MsgTypeDiscoverNewNodeJoin, data.Bytes())  to  ", p.Name)
-			p.SendMsg(MsgTypeDiscoverNewNodeJoin, data.Bytes())
+		if bytes.Compare(p.Id, peerId) != 0 && !p.knownPeerIds.Contains(pidstr) {
+			p.AddKnownPeerId(peerId)
+			fmt.Println("p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())  to  ", hex.EncodeToString(peerId), p.Name)
+			p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())
+		}
+		return false
+	})
+	// send interiorPeerGroup
+	pm.interiorPeerGroup.peers.Each(func(i interface{}) bool {
+		p := i.(*Peer)
+		if bytes.Compare(p.Id, peerId) != 0 && !p.knownPeerIds.Contains(pidstr) {
+			p.AddKnownPeerId(peerId)
+			fmt.Println("p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())  to  ", hex.EncodeToString(peerId), p.Name)
+			p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())
 		}
 		return false
 	})
 	return nil
-}
-
-func (pm *PeerManager) DropPeer(peer *Peer) (bool, error) {
-	pm.peersChangeLock.Lock()
-	defer pm.peersChangeLock.Unlock()
-
-	return pm.dropPeerUnsafe(peer)
-}
-
-func (pm *PeerManager) dropPeerUnsafe(peer *Peer) (bool, error) {
-	if pm.peers.Contains(peer) {
-		pm.peers.Remove(peer)
-		pm.RelationshipPeerIDTable = deleteBytesFromList(pm.RelationshipPeerIDTable, peer.Id)
-		pm.SequentialPeerIDTable = deleteBytesFromList(pm.SequentialPeerIDTable, peer.Id)
-		return true, nil
-	}
-	return false, nil
-}
-
-func (pm *PeerManager) dropPeerUnsafeByID(pid []byte) (bool, error) {
-	ps := pm.peers.ToSlice()
-	for _, p := range ps {
-		peer := p.(*Peer)
-		if bytes.Compare(peer.Id, pid) == 0 {
-			pm.peers.Remove(peer)
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-func (pm *PeerManager) addPeerSuccess(peer *Peer) (bool, error) {
-	fmt.Println("addPeerSuccess", hex.EncodeToString(peer.Id))
-	pm.peers.Add(peer)
-	return true, nil
-}
-
-func (pm *PeerManager) AddPeer(peer *Peer) (bool, error) {
-	pm.peersChangeLock.Lock()
-	defer pm.peersChangeLock.Unlock()
-
-	// check have
-	havp, err := pm.GetPeerByID(peer.Id)
-	if err != nil {
-		return false, err
-	}
-	if havp != nil {
-		// already have id
-		peer.SendMsg(MsgTypeConnectRefuse, nil)
-		peer.Close()
-		return false, nil
-	}
-
-	// add
-	if len(pm.SequentialPeerIDTable) < pm.config.SequentialPeerTableMaxLen {
-		pm.SequentialPeerIDTable = append(pm.SequentialPeerIDTable, peer.Id)
-		return pm.addPeerSuccess(peer)
-	}
-	// move one
-	movePeerID := pm.SequentialPeerIDTable[0]
-	pm.SequentialPeerIDTable = pm.SequentialPeerIDTable[1:]
-	pm.SequentialPeerIDTable = append(pm.SequentialPeerIDTable, peer.Id)
-	// check relationship
-	if len(pm.RelationshipPeerIDTable) < pm.config.RelationshipPeerTableMaxLen {
-		pm.RelationshipPeerIDTable = InsertIntoRelationshipTable(pm.p2p.selfPeerId, pm.RelationshipPeerIDTable, movePeerID)
-		return pm.addPeerSuccess(peer)
-	}
-	var mustDropPeerId []byte
-	pm.RelationshipPeerIDTable, mustDropPeerId =
-		UpdateRelationshipTable(pm.p2p.selfPeerId, pm.RelationshipPeerIDTable, pm.config.RelationshipPeerTableMaxLen, movePeerID)
-	pm.dropPeerUnsafeByID(mustDropPeerId)
-	return pm.addPeerSuccess(peer)
-}
-
-func (pm *PeerManager) IsCanAddToRelationshipPeerTable(pid []byte) bool {
-	if len(pm.RelationshipPeerIDTable) < pm.config.RelationshipPeerTableMaxLen {
-		return true
-	}
-	_, dropone := UpdateRelationshipTable(pm.p2p.selfPeerId, pm.RelationshipPeerIDTable, pm.config.RelationshipPeerTableMaxLen, pid)
-	return bytes.Compare(pid, dropone) != 0
-}
-
-func (pm *PeerManager) GetPeerByID(pid []byte) (*Peer, error) {
-	if len(pid) != 32 {
-		return nil, fmt.Errorf("id len not is 32.")
-	}
-
-	ps := pm.peers.ToSlice()
-	for _, p := range ps {
-		peer := p.(*Peer)
-		if bytes.Compare(peer.Id, pid) == 0 {
-			return peer, nil
-		}
-	}
-	return nil, nil
 }
