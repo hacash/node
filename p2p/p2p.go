@@ -111,13 +111,13 @@ func (p2p *P2PManager) loop() {
 		case <-reconnectSomePublicPeerTiker.C:
 
 			// -------- TEST START --------
-			peers := p2p.peerManager.publicPeerGroup.peers.ToSlice()
-			peers = append(peers, p2p.peerManager.interiorPeerGroup.peers.ToSlice()...)
-			allpnames := ""
-			for _, p := range peers {
-				allpnames += p.(*Peer).Name + "  "
-			}
-			fmt.Println("current peers num ", len(peers), "(  "+allpnames+")")
+			//peers := p2p.peerManager.publicPeerGroup.peers.ToSlice()
+			//peers = append(peers, p2p.peerManager.interiorPeerGroup.peers.ToSlice()...)
+			//allpnames := ""
+			//for _, p := range peers {
+			//	allpnames += p.(*Peer).Name + "  "
+			//}
+			//fmt.Println("current peers num ", len(peers), "(  "+allpnames+")")
 			// -------- TEST END   --------
 
 			go func() {
