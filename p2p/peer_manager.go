@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"bytes"
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	mapset "github.com/deckarep/golang-set"
@@ -37,6 +36,9 @@ type PeerManager struct {
 
 	waitToConnectNode sync.Map // map[string(target_peer_id)]*net.Addr // local addr
 
+	//currentConnectedPeerIDs           mapset.Set // set[string(id)] len = 16
+	//currentConnectedPublicPeerIPPorts mapset.Set // set[string(ipport)] len = 6
+
 	peersChangeLock sync.Mutex
 }
 
@@ -65,40 +67,66 @@ func (pm *PeerManager) Start() {
 
 func (pm *PeerManager) loop() {
 
-	activePeerSendPingTiker := time.NewTicker(time.Minute * 15)
-	dropNotActivePeerTicker := time.NewTicker(time.Minute * 20)
+	activePeerSendPingTiker := time.NewTicker(time.Minute * 5)
+	dropNotActivePeerTicker := time.NewTicker(time.Minute * 7)
 
 	for {
 		select {
 
-		case <-dropNotActivePeerTicker.C:
+		case <-activePeerSendPingTiker.C:
 			curt := time.Now()
 			peers := pm.publicPeerGroup.peers.ToSlice()
-			peers = append(pm.publicPeerGroup.peers.ToSlice(), peers...)
+			peers = append(pm.interiorPeerGroup.peers.ToSlice(), peers...)
 			go func() {
 				for _, p := range peers {
 					peer := p.(*Peer)
-					if peer.activeTime.Add(time.Minute * 25).Before(curt) {
+					if peer.activeTime.Add(time.Minute * 11).Before(curt) {
+						peer.SendMsg(TCPMsgTypePing, nil)
+					}
+				}
+			}()
+
+		case <-dropNotActivePeerTicker.C:
+			curt := time.Now()
+			peers := pm.publicPeerGroup.peers.ToSlice()
+			peers = append(pm.interiorPeerGroup.peers.ToSlice(), peers...)
+			go func() {
+				for _, p := range peers {
+					peer := p.(*Peer)
+					if peer.activeTime.Add(time.Minute * 15).Before(curt) {
 						pm.DropPeer(peer)
 						peer.Close()
 					}
 				}
 			}()
-
-		case <-activePeerSendPingTiker.C:
-			curt := time.Now()
-			peers := pm.publicPeerGroup.peers.ToSlice()
-			peers = append(pm.publicPeerGroup.peers.ToSlice(), peers...)
-			go func() {
-				for _, p := range peers {
-					peer := p.(*Peer)
-					if peer.activeTime.Add(time.Minute * 17).Before(curt) {
-						peer.SendMsg(TCPMsgTypePing, nil)
-					}
-				}
-			}()
 		}
+
 	}
+}
+
+func (pm *PeerManager) FindRandomOnePeerPublicFirst() *Peer {
+	var pp = pm.publicPeerGroup
+	if pp.peers.Cardinality() == 0 {
+		pp = pm.interiorPeerGroup
+	}
+	// pop
+	tarpeer := pp.peers.Pop()
+	if tarpeer != nil {
+		pp.peers.Add(tarpeer)
+	}
+	return tarpeer.(*Peer)
+}
+
+func (pm *PeerManager) BroadcastMessageToUnawarePeers(ty uint16, msgbody []byte, KnowledgeKey string, KnowledgeValue string) error {
+	pm.publicPeerGroup.BroadcastMessageToUnawarePeers(ty, msgbody, KnowledgeKey, KnowledgeValue)
+	pm.interiorPeerGroup.BroadcastMessageToUnawarePeers(ty, msgbody, KnowledgeKey, KnowledgeValue)
+	return nil
+}
+
+func (pm *PeerManager) BroadcastMessageToAllPeers(ty uint16, msgbody []byte) error {
+	pm.publicPeerGroup.BroadcastMessageToAllPeers(ty, msgbody)
+	pm.interiorPeerGroup.BroadcastMessageToAllPeers(ty, msgbody)
+	return nil
 }
 
 func (pm *PeerManager) DropPeer(peer *Peer) error {
@@ -168,12 +196,12 @@ func (pm *PeerManager) GetAllCurrentConnectedPublicPeerAddressBytes() []byte {
 	return addrsbytes
 }
 
-func (pm *PeerManager) CheckHasConnectedWithRemotePublicAddr(tcpaddr *net.TCPAddr) bool {
+func (pm *PeerManager) CheckHasConnectedToRemotePublicAddr(tcpaddr *net.TCPAddr) bool {
+	tartcpaddr := ParseTCPAddrToIPPortBytes(tcpaddr)
+	return pm.CheckHasConnectedToRemotePublicAddrByByte(tartcpaddr)
+}
 
-	tartcpaddr := make([]byte, 6)
-	copy(tartcpaddr[0:4], tcpaddr.IP.To4())
-	binary.BigEndian.PutUint16(tartcpaddr[4:6], uint16(tcpaddr.Port))
-	//
+func (pm *PeerManager) CheckHasConnectedToRemotePublicAddrByByte(tartcpaddr []byte) bool {
 	peers := pm.publicPeerGroup.peers.ToSlice()
 	for _, p := range peers {
 		pipport := p.(*Peer).ParseRemotePublicTCPAddress()
@@ -188,7 +216,7 @@ func (pm *PeerManager) CheckHasConnectedWithRemotePublicAddr(tcpaddr *net.TCPAdd
 
 func (pm *PeerManager) BroadcastFindNewNodeMsgToUnawarePublicPeers(peer *Peer) error {
 	//fmt.Println("BroadcastFindNewNodeMsgToUnawarePublicPeers", peer.ParseRemotePublicTCPAddress())
-	return pm.BroadcastFindNewNodeMsgToUnawarePublicPeersByBytes(peer.Id, peer.ParseRemotePublicTCPAddress())
+	return pm.BroadcastFindNewNodeMsgToUnawarePublicPeersByBytes(peer.ID, peer.ParseRemotePublicTCPAddress())
 }
 
 func (pm *PeerManager) BroadcastFindNewNodeMsgToUnawarePublicPeersByBytes(peerId []byte, ipport []byte) error {
@@ -206,7 +234,7 @@ func (pm *PeerManager) BroadcastFindNewNodeMsgToUnawarePublicPeersByBytes(peerId
 	// send publicPeerGroup
 	pm.publicPeerGroup.peers.Each(func(i interface{}) bool {
 		p := i.(*Peer)
-		if bytes.Compare(p.Id, peerId) != 0 && !p.knownPeerIds.Contains(pidstr) {
+		if bytes.Compare(p.ID, peerId) != 0 && !p.knownPeerIds.Contains(pidstr) {
 			p.AddKnownPeerId(peerId)
 			fmt.Println("p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())  to  ", hex.EncodeToString(peerId), p.Name)
 			p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())
@@ -216,7 +244,7 @@ func (pm *PeerManager) BroadcastFindNewNodeMsgToUnawarePublicPeersByBytes(peerId
 	// send interiorPeerGroup
 	pm.interiorPeerGroup.peers.Each(func(i interface{}) bool {
 		p := i.(*Peer)
-		if bytes.Compare(p.Id, peerId) != 0 && !p.knownPeerIds.Contains(pidstr) {
+		if bytes.Compare(p.ID, peerId) != 0 && !p.knownPeerIds.Contains(pidstr) {
 			p.AddKnownPeerId(peerId)
 			fmt.Println("p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())  to  ", hex.EncodeToString(peerId), p.Name)
 			p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())

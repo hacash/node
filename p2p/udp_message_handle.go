@@ -14,10 +14,10 @@ func (p2p *P2PManager) handleUDPMessage(addr *net.UDPAddr, msgty uint16, msgbody
 		if len(msgbody) != 16+4 {
 			return
 		}
-		if addr.IP.IsLoopback() || addr.IP.IsUnspecified() {
+		if addr.IP.IsLoopback() {
 			return // local ip
 		}
-		callpeer := p2p.peerManager.GetPeerByID(msgbody[0:16])
+		callpeer := p2p.GetPeerByID(msgbody[0:16])
 		if callpeer == nil {
 			return
 		}

@@ -1,10 +1,29 @@
 package p2p
 
 import (
+	"bytes"
 	"encoding/binary"
 	mapset "github.com/deckarep/golang-set"
 	"net"
 )
+
+func (p2p *P2PManager) GetPeerByID(peerID []byte) *Peer {
+	if len(peerID) != 16 {
+		return nil
+	}
+	peer := p2p.peerManager.GetPeerByID(peerID)
+	if peer != nil {
+		return peer
+	}
+	peers := p2p.lookupPeers.ToSlice()
+	for _, p := range peers {
+		peer := p.(*Peer)
+		if bytes.Compare(peerID, peer.ID) == 0 {
+			return peer
+		}
+	}
+	return nil
+}
 
 func (p2p *P2PManager) AddPeerToTargetGroup(group *PeerGroup, peer *Peer) error {
 

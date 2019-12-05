@@ -8,20 +8,65 @@ import (
 	"time"
 )
 
-func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
+func (p2p *P2PManager) readyHandshakeAndSuccessfulToRequiredata(peer *Peer) {
+	if peer.isPermitCompleteNode == false || peer.ID == nil {
+		return
+	}
+	// ready to do
+	if peer.publicIPv4 != nil {
+		// is public and add peer
+		p2p.AddPeerToTargetGroup(p2p.peerManager.publicPeerGroup, peer)
+		// get addrs
+		peer.SendMsg(TCPMsgTypeGetPublicConnectedPeerAddrs, nil)
+	} else {
+		// ask is public
+		p2p.sendMsgToEnquirePublic(peer)
+	}
+}
+
+func (p2p *P2PManager) handleTCPMessage(peer *Peer, msgty uint16, msgbody []byte) {
 
 	peer.activeTime = time.Now() // do live mark
+
+	if TCPMsgTypePublicConnectedPeerAddrs == msgty {
+		// got addrs
+		if len(msgbody)%6 != 0 {
+			return // data error
+		}
+		for i := 0; i < len(msgbody)/6; i++ {
+			k := i * 6
+			one := msgbody[k : k+6]
+			//fmt.Println("AddOldPublicPeerAddr", one)
+			p2p.AddOldPublicPeerAddrByBytes(one)
+		}
+		return
+	}
+
+	if TCPMsgTypeGetPublicConnectedPeerAddrs == msgty {
+		addrsbytes := p2p.peerManager.GetAllCurrentConnectedPublicPeerAddressBytes()
+		// send addrs
+		peer.SendMsg(TCPMsgTypePublicConnectedPeerAddrs, addrsbytes)
+		return
+	}
 
 	if TCPMsgTypeConnectRefuse == msgty {
 		peer.Close()
 		return
 	}
 
+	if TCPMsgTypeHandshakeSuccess == msgty {
+		peer.isPermitCompleteNode = true
+		// connect is finish successfully
+		p2p.readyHandshakeAndSuccessfulToRequiredata(peer)
+		return
+	}
+
 	// hand shake
-	if TCPMsgTypeHandShake == msgty {
+	if TCPMsgTypeHandshake == msgty {
 		//fmt.Println("MsgTypeHandShake", msgbody)
 		msglen := 2 + 2 + 2 + 16 + 32 // 54
 		if len(msgbody) != msglen {
+			peer.Close()
 			return
 		}
 		peerVersion := binary.BigEndian.Uint16(msgbody[0:2])
@@ -31,36 +76,31 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 		}
 		peer.tcpListenPort = int(binary.BigEndian.Uint16(msgbody[2:4]))
 		peer.udpListenPort = int(binary.BigEndian.Uint16(msgbody[4:6]))
-		peer.Id = msgbody[6:22]
+		peerID := msgbody[6:22]
 		// check have
-		havp := p2p.peerManager.GetPeerByID(peer.Id)
+		havp := p2p.GetPeerByID(peerID)
 		if havp != nil {
 			// already have id
 			peer.SendMsg(TCPMsgTypeConnectRefuse, nil)
 			peer.Close()
 			return
 		}
-		peer.AddKnownPeerId(peer.Id)
+		peer.ID = peerID
+		peer.AddKnownPeerId(peer.ID)
 		peer.Name = strings.Trim(string(msgbody[22:54]), string([]byte{0}))
 		// add to lookup
 		p2p.lookupPeers.Add(peer)
-		// ask is public
-		if peer.publicIPv4 == nil {
-			go func() {
-				<-time.Tick(time.Millisecond * 750)
-				p2p.sendMsgToEnquirePublic(peer)
-			}()
-		} else {
-			// is public and add peer
-			p2p.AddPeerToTargetGroup(p2p.peerManager.publicPeerGroup, peer)
-		}
+		// send handshake success msg
+		peer.SendMsg(TCPMsgTypeHandshakeSuccess, nil)
+		// connect is finish successfully
+		p2p.readyHandshakeAndSuccessfulToRequiredata(peer)
 		return
 	}
 
 	////////////////////////////////////////////////////////
 
 	// check is hand shake
-	if len(peer.Id) == 0 {
+	if peer.ID == nil {
 		return
 	}
 
@@ -85,27 +125,6 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 				}
 			}()
 		}
-		return
-	}
-
-	if TCPMsgTypePublicConnectedPeerAddrs == msgty {
-		// got addrs
-		if len(msgbody)%6 != 0 {
-			return // data error
-		}
-		for i := 0; i < len(msgbody)/6; i++ {
-			k := i * 6
-			one := msgbody[k : k+6]
-			//fmt.Println("AddOldPublicPeerAddr", one)
-			p2p.AddOldPublicPeerAddrByBytes(one)
-		}
-		return
-	}
-
-	if TCPMsgTypeGetPublicConnectedPeerAddrs == msgty {
-		addrsbytes := p2p.peerManager.GetAllCurrentConnectedPublicPeerAddressBytes()
-		// send addrs
-		peer.SendMsg(TCPMsgTypePublicConnectedPeerAddrs, addrsbytes)
 		return
 	}
 
@@ -141,7 +160,7 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 				peer.publicIPv4 = tcp.IP.To4() // ok is public
 				//fmt.Println("res checkcode",  res.code, len(tcp.IP), []byte(tcp.IP), peer.publicIPv4, tcp.IP.String())
 				// send public ip
-				peer.SendMsg(TCPMsgTypeTellPublicIP, tcp.IP)
+				peer.SendMsg(TCPMsgTypeTellPublicIP, peer.publicIPv4)
 				// add peer
 				p2p.AddPeerToTargetGroup(p2p.peerManager.publicPeerGroup, peer)
 				// broadcast msg find new public peer
@@ -154,11 +173,6 @@ func (p2p *P2PManager) headleMessage(peer *Peer, msgty uint16, msgbody []byte) {
 	}
 
 	////////////////////////////////////////////////////////
-
-	// check is permit complete node
-	if !peer.IsPermitCompleteNode {
-		return
-	}
 
 	// ping pong
 	if TCPMsgTypePing == msgty {

@@ -10,12 +10,16 @@ import (
 )
 
 type Peer struct {
-	IsPermitCompleteNode bool // block msg
+	isPermitCompleteNode bool
 
 	Name string
-	Id   []byte // len 32
+	ID   []byte // len 32
 
-	TcpConn net.Conn
+	TcpConn      net.Conn
+	tcpMsgDataCh chan struct {
+		ty uint16
+		v  []byte
+	}
 
 	publicIPv4    []byte // public IP if is public peer
 	tcpListenPort int
@@ -31,23 +35,34 @@ type Peer struct {
 
 func NewPeer(id []byte, name string) *Peer {
 	return &Peer{
-		IsPermitCompleteNode: false,
-		Id:                   id,
+		isPermitCompleteNode: false,
+		ID:                   id,
 		Name:                 name,
 		publicIPv4:           nil,
 		tcpListenPort:        0,
 		udpListenPort:        0,
 		knownPeerIds:         mapset.NewSet(),
+		tcpMsgDataCh: make(chan struct {
+			ty uint16
+			v  []byte
+		}, 10),
 	}
 }
 
 func (p *Peer) Close() {
+	if p.tcpMsgDataCh != nil {
+		p.tcpMsgDataCh <- struct {
+			ty uint16
+			v  []byte
+		}{ty: 0, v: nil} // mark end
+		p.tcpMsgDataCh = nil
+	}
 	if p.TcpConn != nil {
 		p.TcpConn.Close()
 		p.TcpConn = nil
 	}
 	// reset
-	p.IsPermitCompleteNode = false
+	p.isPermitCompleteNode = false
 }
 
 func (p *Peer) ParseRemotePublicTCPAddress() []byte {
@@ -66,6 +81,30 @@ func (p *Peer) AddKnownPeerId(pid []byte) {
 	if p.knownPeerIds.Cardinality() > 200 {
 		p.knownPeerIds.Pop() // remove one
 	}
+}
+
+func (p *Peer) AddKnowledge(KnowledgeKey string, KnowledgeValue string) bool {
+	knval := mapset.NewSet()
+	if actual, ldok := p.knownPeerKnowledgeDuplicateRemoval.LoadOrStore(KnowledgeKey, knval); ldok {
+		actknow := actual.(mapset.Set)
+		if actknow.Contains(KnowledgeValue) {
+			return false // known it
+		}
+		knval = actknow
+	}
+	knval.Add(KnowledgeValue)
+	if knval.Cardinality() > 255 { // max Knowledge of one key
+		knval.Pop() // remove one
+	}
+	return true
+}
+
+func (p *Peer) SendUnawareMsg(ty uint16, msgbody []byte, KnowledgeKey string, KnowledgeValue string) error {
+	if p.AddKnowledge(KnowledgeKey, KnowledgeValue) {
+		// add success and send data
+		return p.SendMsg(ty, msgbody)
+	}
+	return nil
 }
 
 func (p *Peer) SendMsg(ty uint16, msgbody []byte) error {

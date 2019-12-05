@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	mapset "github.com/deckarep/golang-set"
-	"net"
 	"sync"
 	"time"
 )
@@ -33,7 +32,7 @@ type P2PManager struct {
 
 	selfPeerName       string
 	selfPeerId         []byte // len = 16
-	selfRemotePublicIP net.IP // is public ?
+	selfRemotePublicIP []byte // is public ?
 
 	//selfRemoteAddr net.Addr
 
@@ -103,10 +102,21 @@ func (p2p *P2PManager) loop() {
 	dropUnHandShakeTiker := time.NewTicker(time.Second * 13)
 	dropNotReplyPublicTiker := time.NewTicker(time.Second * 8)
 	reconnectSomePublicPeerTiker := time.NewTicker(time.Second * 21)
+	getAddrsFromPublicPeersTiker := time.NewTicker(time.Minute * 23)
 
 	for {
 
 		select {
+
+		case <-getAddrsFromPublicPeersTiker.C:
+			go func() {
+				pubpeers := p2p.peerManager.publicPeerGroup.peers.ToSlice()
+				for _, p := range pubpeers {
+					peer := p.(*Peer)
+					peer.SendMsg(TCPMsgTypeGetPublicConnectedPeerAddrs, nil)
+					<-time.Tick(time.Second * 7)
+				}
+			}()
 
 		case <-reconnectSomePublicPeerTiker.C:
 
@@ -137,7 +147,7 @@ func (p2p *P2PManager) loop() {
 							go func() {
 								connerr := p2p.TryConnectToPeer(nil, addr)
 								if connerr == nil { // reput in
-									p2p.recordOldPublicPeerTCPAddrs.Add(ipport)
+									p2p.AddOldPublicPeerAddrByBytes(ipports)
 								}
 							}()
 						}
@@ -168,7 +178,7 @@ func (p2p *P2PManager) loop() {
 			go func() {
 				for _, p := range peers {
 					peer := p.(*Peer)
-					if len(peer.Id) == 0 {
+					if len(peer.ID) == 0 {
 						if peer.connTime.Add(time.Second * 9).Before(tnow) {
 							peer.TcpConn.Close() // drop it over time not do hand shake
 						}

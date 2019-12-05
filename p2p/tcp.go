@@ -1,7 +1,6 @@
 package p2p
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"net"
@@ -41,15 +40,6 @@ func (p2p *P2PManager) handleNewConn(conn net.Conn, isConnectToPublic bool) {
 	peer.TcpConn = conn
 	peer.connTime = time.Now()
 
-	// time out for sign up
-	//go func() {
-	//	<-time.Tick(time.Second * 35)
-	//	if len(peer.Id) == 0 {
-	//		fmt.Println("peer.Close() <- time.Tick(time.Second * 35)")
-	//		peer.Close() // drop peer and close connect at time out
-	//	}
-	//}()
-
 	//RemoteAddr := conn.RemoteAddr()
 	//fmt.Println("Connect Remote Addr", RemoteAddr)
 
@@ -68,84 +58,93 @@ func (p2p *P2PManager) handleNewConn(conn net.Conn, isConnectToPublic bool) {
 
 	}
 
-	// handshake and get addrs
+	// handshake
+	p2p.sendHandShakeMessageToConn(conn)
+
+	// handle msg
 	go func() {
-		p2p.sendHandShakeMessageToConn(conn)
-		<-time.Tick(time.Second * 1)
-		if isConnectToPublic {
-			// get addr
-			peer.SendMsg(TCPMsgTypeGetPublicConnectedPeerAddrs, nil)
+		for {
+			msgdataitem := <-peer.tcpMsgDataCh
+			if msgdataitem.ty == 0 {
+				break // end
+			}
+			p2p.handleTCPMessage(peer, msgdataitem.ty, msgdataitem.v)
 		}
 	}()
 
 	// read msg
 	segdata := make([]byte, 4069)
-	holdbuf := bytes.NewBuffer([]byte{})
-	notreadwait := false
+	fullmsgdata := make([]byte, 0, 6)
 	for {
-		var readnum int = 0
-		if !notreadwait {
-			rn, e1 := conn.Read(segdata)
-			if e1 != nil {
-				//fmt.Println(e1)
-				break
-			}
-			if rn <= 0 {
-				continue
-			}
-			readnum = rn
-		}
-		notreadwait = false
+	STARTDATACHECK:
 
-		//fmt.Println("conn.Read(segdata)", segdata[:readnum])
-		holdbuf.Write(segdata[:readnum])
-		holdsize := holdbuf.Len()
-		if holdsize < 4 {
-			continue
-		}
-		data := holdbuf.Bytes()
-		msgType := binary.BigEndian.Uint16(data[:2])
-		msgLen := int(0)
-		msgLenRealSegSize := int(0)
-		msgBody := []byte{}
-		if msgType == TCPMsgTypeData {
-			if uint32(holdsize) < 6 {
-				continue
-			}
-			msgLen = int(binary.BigEndian.Uint32(data[2:6]))
-			msgLenRealSegSize = holdsize - 6
-			msgBody = data[6:]
-		} else {
-			msgLen = int(binary.BigEndian.Uint16(data[2:4]))
-			msgLenRealSegSize = holdsize - 4
-			msgBody = data[4:]
-		}
-		if msgLenRealSegSize < msgLen {
-			continue // next segdata
-		} else if msgLenRealSegSize > msgLen {
-			holdbuf = bytes.NewBuffer(msgBody[msgLen:]) // cache
-			msgBody = msgBody[:msgLen]
-			notreadwait = true
-		}
-		//fmt.Println("p2p_other.headleMessage", msgType, msgBody)
-		// deal real msg
-		go p2p.headleMessage(peer, msgType, msgBody)
-		// reset
-		if !notreadwait {
-			holdbuf.Truncate(0) // clear
-		}
+		if len(fullmsgdata) >= 4 {
 
+			//fmt.Println("fullmsgdata", fullmsgdata)
+
+			msgty := binary.BigEndian.Uint16(fullmsgdata[0:2])
+			length := 0
+			value := make([]byte, 0)
+			if msgty == TCPMsgTypeData {
+				if len(fullmsgdata) >= 6 {
+					length = int(binary.BigEndian.Uint32(fullmsgdata[2:6]))
+					value = fullmsgdata[6:]
+				} else {
+					goto NEXTREAD
+				}
+			} else {
+				length = int(binary.BigEndian.Uint16(fullmsgdata[2:4]))
+				value = fullmsgdata[4:]
+			}
+
+			//fmt.Println("msgty", msgty, "length", length, "value", len(value), value)
+
+			var segvalue []byte = nil
+			if len(value) < length {
+				goto NEXTREAD
+			} else if len(value) > length {
+				//fmt.Println("len(value) > length")
+				segvalue = value[0:length]
+				fullmsgdata = value[length:]
+			} else {
+				segvalue = value
+				fullmsgdata = make([]byte, 0, 6)
+			}
+
+			//fmt.Println("msgty", msgty, "length", length, "value", len(segvalue), segvalue)
+			//fmt.Println("fullmsgdata", fullmsgdata)
+
+			peer.tcpMsgDataCh <- struct {
+				ty uint16
+				v  []byte
+			}{ty: msgty, v: segvalue}
+
+			if len(fullmsgdata) >= 4 {
+				goto STARTDATACHECK
+			}
+
+		}
+	NEXTREAD:
+		// read
+		rn, e1 := conn.Read(segdata)
+		if e1 != nil {
+			//fmt.Println(e1)
+			break
+		}
+		fullmsgdata = append(fullmsgdata, segdata[0:rn]...)
 	}
 
-	// msg error and drop peer
-	if len(peer.Id) > 0 {
-		if peer.publicIPv4 != nil && peer.IsPermitCompleteNode {
-			p2p.AddOldPublicPeerAddr(peer.publicIPv4, peer.tcpListenPort)
+	// msg end or error and drop peer
+	if peer.ID != nil {
+		if peer.publicIPv4 != nil {
+			if peer.isPermitCompleteNode {
+				p2p.AddOldPublicPeerAddr(peer.publicIPv4, peer.tcpListenPort) // add addr back
+			}
 			fmt.Println("[Peer] disconnected @public peer name:", peer.Name, "addr:", peer.TcpConn.RemoteAddr().String())
 		} else {
 			fmt.Println("[Peer] disconnected peer:", peer.Name)
 		}
-		if p2p.customerDataHandler != nil && peer.IsPermitCompleteNode {
+		if p2p.customerDataHandler != nil {
 			go p2p.customerDataHandler.OnDisconnected(peer) // disconnect event call
 		}
 		//fmt.Println("handleNewConn DropPeer", peer.Name)
@@ -169,5 +168,5 @@ func (p2p *P2PManager) sendHandShakeMessageToConn(conn net.Conn) {
 	copy(data[6:22], p2p.selfPeerId)
 	copy(data[22:54], p2p.selfPeerName)
 
-	tmp_p.SendMsg(TCPMsgTypeHandShake, data)
+	tmp_p.SendMsg(TCPMsgTypeHandshake, data)
 }

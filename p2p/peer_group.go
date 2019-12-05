@@ -33,6 +33,24 @@ func NewPeerGroup(selfpid []byte, rptl, sptl int) *PeerGroup {
 	}
 }
 
+func (pm *PeerGroup) BroadcastMessageToUnawarePeers(ty uint16, msgbody []byte, KnowledgeKey string, KnowledgeValue string) error {
+	pm.peers.Each(func(i interface{}) bool {
+		p := i.(*Peer)
+		p.SendUnawareMsg(ty, msgbody, KnowledgeKey, KnowledgeValue)
+		return false
+	})
+	return nil
+}
+
+func (pm *PeerGroup) BroadcastMessageToAllPeers(ty uint16, msgbody []byte) error {
+	pm.peers.Each(func(i interface{}) bool {
+		p := i.(*Peer)
+		p.SendMsg(ty, msgbody)
+		return false
+	})
+	return nil
+}
+
 func (pm *PeerGroup) IsUnfilled() bool {
 	if pm.peers.Cardinality() < pm.relationshipTableMaxSize+pm.sequentialTableMaxSize {
 		return true
@@ -50,8 +68,8 @@ func (pm *PeerGroup) DropPeer(peer *Peer) (bool, error) {
 func (pm *PeerGroup) dropPeerUnsafe(peer *Peer) (bool, error) {
 	if pm.peers.Contains(peer) {
 		pm.peers.Remove(peer)
-		pm.relationshipPeerIDTable = deleteBytesFromList(pm.relationshipPeerIDTable, peer.Id)
-		pm.sequentialPeerIDTable = deleteBytesFromList(pm.sequentialPeerIDTable, peer.Id)
+		pm.relationshipPeerIDTable = deleteBytesFromList(pm.relationshipPeerIDTable, peer.ID)
+		pm.sequentialPeerIDTable = deleteBytesFromList(pm.sequentialPeerIDTable, peer.ID)
 		return true, nil
 	}
 	return false, nil
@@ -64,7 +82,7 @@ func (pm *PeerGroup) dropPeerUnsafeByID(pid []byte) bool {
 	ps := pm.peers.ToSlice()
 	for _, p := range ps {
 		peer := p.(*Peer)
-		if bytes.Compare(peer.Id, pid) == 0 {
+		if bytes.Compare(peer.ID, pid) == 0 {
 			pm.peers.Remove(peer)
 			return true
 		}
@@ -73,14 +91,12 @@ func (pm *PeerGroup) dropPeerUnsafeByID(pid []byte) bool {
 }
 
 func (pm *PeerGroup) addPeerSuccess(peer *Peer) (bool, error) {
-	//fmt.Println("addPeerSuccess", hex.EncodeToString(peer.Id))
+	//fmt.Println("addPeerSuccess", hex.EncodeToString(peer.ID))
 	publicstr := ""
 	if peer.publicIPv4 != nil {
 		publicstr = "@public "
 	}
-	fmt.Println("[Peer] successfully connected "+publicstr+"peer id:", hex.EncodeToString(peer.Id), "name:", peer.Name, "addr:", peer.TcpConn.RemoteAddr().String())
-
-	peer.IsPermitCompleteNode = true
+	fmt.Println("[Peer] successfully connected "+publicstr+"peer id:", hex.EncodeToString(peer.ID), "name:", peer.Name, "addr:", peer.TcpConn.RemoteAddr().String())
 	pm.peers.Add(peer)
 	return true, nil
 }
@@ -95,13 +111,13 @@ func (pm *PeerGroup) AddPeer(peer *Peer) (bool, error) {
 
 	// add
 	if len(pm.sequentialPeerIDTable) < pm.sequentialTableMaxSize {
-		pm.sequentialPeerIDTable = append(pm.sequentialPeerIDTable, peer.Id)
+		pm.sequentialPeerIDTable = append(pm.sequentialPeerIDTable, peer.ID)
 		return pm.addPeerSuccess(peer)
 	}
 	// move one
 	movePeerID := pm.sequentialPeerIDTable[0]
 	pm.sequentialPeerIDTable = pm.sequentialPeerIDTable[1:]
-	pm.sequentialPeerIDTable = append(pm.sequentialPeerIDTable, peer.Id)
+	pm.sequentialPeerIDTable = append(pm.sequentialPeerIDTable, peer.ID)
 	// check relationship
 	if len(pm.relationshipPeerIDTable) < pm.relationshipTableMaxSize {
 		pm.relationshipPeerIDTable = InsertIntoRelationshipTable(pm.mySelfID, pm.relationshipPeerIDTable, movePeerID)
@@ -129,7 +145,7 @@ func (pm *PeerGroup) GetPeerByID(pid []byte) (*Peer, error) {
 	ps := pm.peers.ToSlice()
 	for _, p := range ps {
 		peer := p.(*Peer)
-		if bytes.Compare(peer.Id, pid) == 0 {
+		if bytes.Compare(peer.ID, pid) == 0 {
 			return peer, nil
 		}
 	}
