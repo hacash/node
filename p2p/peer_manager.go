@@ -13,7 +13,6 @@ import (
 type PeerManagerConfig struct {
 	PublicPeerGroupMaxLen   int
 	InteriorPeerGroupMaxLen int
-	LookupConnectMaxLen     int
 }
 
 func NewPeerManagerConfig() *PeerManagerConfig {
@@ -104,7 +103,11 @@ func (pm *PeerManager) loop() {
 	}
 }
 
-func (pm *PeerManager) FindRandomOnePeerPublicFirst() *Peer {
+func (pm *PeerManager) PeerLen() int {
+	return pm.publicPeerGroup.peers.Cardinality() + pm.interiorPeerGroup.peers.Cardinality()
+}
+
+func (pm *PeerManager) FindRandomOnePeerBetterBePublic() *Peer {
 	var pp = pm.publicPeerGroup
 	if pp.peers.Cardinality() == 0 {
 		pp = pm.interiorPeerGroup
@@ -117,16 +120,14 @@ func (pm *PeerManager) FindRandomOnePeerPublicFirst() *Peer {
 	return tarpeer.(*Peer)
 }
 
-func (pm *PeerManager) BroadcastMessageToUnawarePeers(ty uint16, msgbody []byte, KnowledgeKey string, KnowledgeValue string) error {
+func (pm *PeerManager) BroadcastMessageToUnawarePeers(ty uint16, msgbody []byte, KnowledgeKey string, KnowledgeValue string) {
 	pm.publicPeerGroup.BroadcastMessageToUnawarePeers(ty, msgbody, KnowledgeKey, KnowledgeValue)
 	pm.interiorPeerGroup.BroadcastMessageToUnawarePeers(ty, msgbody, KnowledgeKey, KnowledgeValue)
-	return nil
 }
 
-func (pm *PeerManager) BroadcastMessageToAllPeers(ty uint16, msgbody []byte) error {
+func (pm *PeerManager) BroadcastMessageToAllPeers(ty uint16, msgbody []byte) {
 	pm.publicPeerGroup.BroadcastMessageToAllPeers(ty, msgbody)
 	pm.interiorPeerGroup.BroadcastMessageToAllPeers(ty, msgbody)
-	return nil
 }
 
 func (pm *PeerManager) DropPeer(peer *Peer) error {

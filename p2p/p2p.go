@@ -1,7 +1,6 @@
 package p2p
 
 import (
-	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	mapset "github.com/deckarep/golang-set"
@@ -12,14 +11,21 @@ import (
 type P2PManagerConfig struct {
 	TCPListenPort       int
 	UDPListenPort       int
-	LookupConnectMaxLen int
+	Name                string
+	ID                  []byte
+	lookupConnectMaxLen int
 }
 
-func NewP2PManagerConfig() *P2PManagerConfig {
+func NewP2PManagerConfig(id []byte) *P2PManagerConfig {
+	if len(id) != 16 {
+		panic("P2PManagerConfig ID len must be 16.")
+	}
 	cnf := &P2PManagerConfig{
+		Name:                "hnode_" + hex.EncodeToString(id),
+		ID:                  id,
 		TCPListenPort:       3337,
 		UDPListenPort:       3336,
-		LookupConnectMaxLen: 128,
+		lookupConnectMaxLen: 128,
 	}
 	return cnf
 }
@@ -47,7 +53,7 @@ type P2PManager struct {
 	recordStaticPublicPeerTCPAddrs mapset.Set // static setting
 
 	// handler
-	customerDataHandler P2PMsgDataHandler
+	customerDataHandler MsgDataHandler
 }
 
 func NewP2PManager(cnf *P2PManagerConfig, pmcnf *PeerManagerConfig) (*P2PManager, error) {
@@ -65,11 +71,14 @@ func NewP2PManager(cnf *P2PManagerConfig, pmcnf *PeerManagerConfig) (*P2PManager
 		customerDataHandler:            nil,
 	}
 
+	p2p.selfPeerId = cnf.ID
+	p2p.selfPeerName = cnf.Name
+
 	// -------- TEST START --------
-	p2p.selfPeerId = make([]byte, 16)
-	rand.Read(p2p.selfPeerId) // test
-	nnn := []byte(hex.EncodeToString(p2p.selfPeerId))
-	p2p.selfPeerName = "hcx_test_peer_" + string(nnn[:8])
+	//p2p.selfPeerId = make([]byte, 16)
+	//rand.Read(p2p.selfPeerId) // test
+	//nnn := []byte(hex.EncodeToString(p2p.selfPeerId))
+	//p2p.selfPeerName = "hcx_test_peer_" + string(nnn[:8])
 	//fmt.Println("im: ", p2p.selfPeerName, string(nnn))
 	// -------- TEST END --------
 
@@ -79,7 +88,7 @@ func NewP2PManager(cnf *P2PManagerConfig, pmcnf *PeerManagerConfig) (*P2PManager
 	return p2p, nil
 }
 
-func (p2p *P2PManager) SetMsgHandler(handler P2PMsgDataHandler) {
+func (p2p *P2PManager) SetMsgHandler(handler MsgDataHandler) {
 	p2p.customerDataHandler = handler
 }
 

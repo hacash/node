@@ -51,7 +51,7 @@ func (p2p *P2PManager) handleNewConn(conn net.Conn, isConnectToPublic bool) {
 		}
 		//
 	} else {
-		if p2p.lookupPeers.Cardinality() >= p2p.config.LookupConnectMaxLen {
+		if p2p.lookupPeers.Cardinality() >= p2p.config.lookupConnectMaxLen {
 			peer.SendMsg(TCPMsgTypeConnectRefuse, nil)
 			peer.Close()
 		}
@@ -145,7 +145,7 @@ func (p2p *P2PManager) handleNewConn(conn net.Conn, isConnectToPublic bool) {
 			fmt.Println("[Peer] disconnected peer:", peer.Name)
 		}
 		if p2p.customerDataHandler != nil {
-			go p2p.customerDataHandler.OnDisconnected(peer) // disconnect event call
+			p2p.customerDataHandler.OnDisconnected(peer) // disconnect event call
 		}
 		//fmt.Println("handleNewConn DropPeer", peer.Name)
 		p2p.peerManager.DropPeer(peer)

@@ -189,7 +189,7 @@ func (p2p *P2PManager) handleTCPMessage(peer *Peer, msgty uint16, msgbody []byte
 			return
 		}
 		// call handle func
-		go p2p.customerDataHandler.OnMsgData(peer, binary.BigEndian.Uint16(msgbody[0:2]), msgbody[2:])
+		go p2p.customerDataHandler.OnMsgData(p2p.peerManager, peer, binary.BigEndian.Uint16(msgbody[0:2]), msgbody[2:])
 		return
 	}
 
