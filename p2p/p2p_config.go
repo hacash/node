@@ -10,6 +10,7 @@ import (
 )
 
 type P2PManagerConfig struct {
+	Datadir             string
 	TCPListenPort       int
 	UDPListenPort       int
 	Name                string
@@ -42,18 +43,18 @@ func NewP2PManagerConfig(cnffile *sys.Inicnf) *P2PManagerConfig {
 	}
 	// create cnf
 	cnf := NewP2PManagerConfigByID(p2pid)
-
+	cnf.Datadir = data_dir
 	return cnf
 }
 
 func saveIDToDisk(data_dir string, p2pid []byte) {
-	os.MkdirAll(path.Base(data_dir), os.ModePerm)
+	os.MkdirAll(data_dir, os.ModePerm)
 	idfile, e1 := os.OpenFile(path.Join(data_dir, "id.json"), os.O_RDWR|os.O_CREATE, 0777)
 	if e1 == nil {
 		idjsonobj := struct {
-			id string
+			ID string
 		}{}
-		idjsonobj.id = hex.EncodeToString(p2pid)
+		idjsonobj.ID = hex.EncodeToString(p2pid)
 		jsonbts, e := json.Marshal(idjsonobj)
 		if e == nil {
 			idfile.Write(jsonbts)
@@ -65,15 +66,16 @@ func saveIDToDisk(data_dir string, p2pid []byte) {
 func readIDFromDisk(data_dir string) []byte {
 	var p2pid []byte = nil
 	idjsonobj := struct {
-		id string
+		ID string `json:"ID"`
 	}{}
 	idfile, e1 := os.OpenFile(path.Join(data_dir, "id.json"), os.O_RDWR|os.O_CREATE, 0777)
 	if e1 == nil {
 		idjsonstr := make([]byte, 16*4)
 		rn, e := idfile.Read(idjsonstr)
 		if e == nil {
-			if json.Unmarshal(idjsonstr[0:rn], idjsonobj) == nil {
-				id, e := hex.DecodeString(idjsonobj.id)
+			e := json.Unmarshal(idjsonstr[0:rn], &idjsonobj)
+			if e == nil {
+				id, e := hex.DecodeString(idjsonobj.ID)
 				if e == nil && len(id) >= 16 {
 					p2pid = id[0:16]
 				}

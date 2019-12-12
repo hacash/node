@@ -5,6 +5,7 @@ import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -47,6 +48,20 @@ func NewPeer(id []byte, name string) *Peer {
 			v  []byte
 		}, 10),
 	}
+}
+
+// interface api
+func (p *Peer) Describe() string {
+	des := p.Name
+	if p.publicIPv4 != nil {
+		des += "[" + ParseIPToString(p.publicIPv4) + ":" + strconv.Itoa(p.tcpListenPort) + "]"
+	}
+	return des
+}
+
+// interface api
+func (p *Peer) Disconnect() {
+	p.Close()
 }
 
 func (p *Peer) Close() {
@@ -105,6 +120,13 @@ func (p *Peer) SendUnawareMsg(ty uint16, msgbody []byte, KnowledgeKey string, Kn
 		return p.SendMsg(ty, msgbody)
 	}
 	return nil
+}
+
+// interface api
+func (p *Peer) SendDataMsg(ty uint16, msgbody []byte) {
+	data := make([]byte, 2)
+	binary.BigEndian.PutUint16(data, ty)
+	p.SendMsg(TCPMsgTypeData, append(data, msgbody...))
 }
 
 func (p *Peer) SendMsg(ty uint16, msgbody []byte) error {
