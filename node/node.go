@@ -1,9 +1,7 @@
 package node
 
 import (
-	"github.com/hacash/core/inicnf"
 	"github.com/hacash/core/interfaces"
-	"github.com/hacash/core/sys"
 	"github.com/hacash/mint/blockchain"
 	"github.com/hacash/node/p2p"
 )
@@ -16,38 +14,31 @@ type HacashNode struct {
 	blockchain interfaces.BlockChain
 }
 
-func NewHacashNodeByIniCnf(cnffile *inicnf.File) *HacashNode {
-	cnf := NewHacashNodeConfig()
+func NewHacashNode(config *HacashNodeConfig) (*HacashNode, error) {
 
-	data_dir := cnffile.Section("").Key("data_dir").String()
-	cnf.Datadir = sys.CnfMustDataDir(data_dir)
-
-	hacashnode := newHacashNode(cnf)
+	hacashnode := &HacashNode{
+		config: config,
+	}
 
 	// p2p
-	p2pmng, err := p2p.NewP2PManagerByIniCnf(cnffile)
+	p2pcnf := p2p.NewP2PManagerConfig(config.cnffile)
+	peercnf := p2p.NewPeerManagerConfig(config.cnffile)
+	p2pmng, err := p2p.NewP2PManager(p2pcnf, peercnf)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	hacashnode.p2p = p2pmng
 
 	// blockchain
-	bc, err2 := blockchain.NewBlockChainByIniCnf(cnffile)
+	bccnf := blockchain.NewBlockChainConfig(config.cnffile)
+	bc, err2 := blockchain.NewBlockChain(bccnf)
 	if err2 != nil {
-		panic(err2)
+		return nil, err2
 	}
 	hacashnode.blockchain = bc
 
-	return hacashnode
-}
-
-func newHacashNode(cnf *HacashNodeConfig) *HacashNode {
-
-	hacash := &HacashNode{
-		config: cnf,
-	}
-
-	return hacash
+	// return
+	return hacashnode, nil
 }
 
 // Start

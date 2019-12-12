@@ -34,7 +34,7 @@ func main() {
 	//startServiceTcp()
 	//startClientTcp()
 
-	//p2pcnf := p2p_other.NewP2PManagerConfig()
+	//p2pcnf := p2p_other.NewP2PManagerConfigByID()
 	//pm, _ := p2p_other.NewP2PManager(p2pcnf)
 	//
 	//pm.Start()
@@ -114,10 +114,10 @@ func main() {
 
 func startnode(port int) {
 
-	p2pcnf := p2p.NewP2PManagerConfig()
+	p2pcnf := p2p.NewP2PManagerConfigByID()
 	p2pcnf.TCPListenPort = port
 	p2pcnf.UDPListenPort = p2pcnf.TCPListenPort + 1
-	pmcnf := p2p.NewPeerManagerConfig()
+	pmcnf := p2p.NewEmptyPeerManagerConfig()
 	pm, _ := p2p.NewP2PManager(p2pcnf, pmcnf)
 	pm.Start()
 	// connect test

@@ -8,28 +8,6 @@ import (
 	"time"
 )
 
-type P2PManagerConfig struct {
-	TCPListenPort       int
-	UDPListenPort       int
-	Name                string
-	ID                  []byte
-	lookupConnectMaxLen int
-}
-
-func NewP2PManagerConfig(id []byte) *P2PManagerConfig {
-	if len(id) != 16 {
-		panic("P2PManagerConfig ID len must be 16.")
-	}
-	cnf := &P2PManagerConfig{
-		Name:                "hnode_" + hex.EncodeToString(id),
-		ID:                  id,
-		TCPListenPort:       3337,
-		UDPListenPort:       3336,
-		lookupConnectMaxLen: 128,
-	}
-	return cnf
-}
-
 type P2PManager struct {
 	config *P2PManagerConfig
 

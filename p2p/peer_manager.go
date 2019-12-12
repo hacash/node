@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	mapset "github.com/deckarep/golang-set"
+	"github.com/hacash/core/sys"
 	"net"
 	"sync"
 	"time"
@@ -15,13 +16,21 @@ type PeerManagerConfig struct {
 	InteriorPeerGroupMaxLen int
 }
 
-func NewPeerManagerConfig() *PeerManagerConfig {
+func NewEmptyPeerManagerConfig() *PeerManagerConfig {
 	cnf := &PeerManagerConfig{
 		PublicPeerGroupMaxLen:   15,
 		InteriorPeerGroupMaxLen: 60,
 	}
 	return cnf
 }
+
+func NewPeerManagerConfig(cnffile *sys.Inicnf) *PeerManagerConfig {
+	cnf := NewEmptyPeerManagerConfig()
+
+	return cnf
+}
+
+////////////////////////////////////////
 
 type PeerManager struct {
 	p2p    *P2PManager

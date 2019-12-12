@@ -16,6 +16,9 @@
 p2p_t/
 p2p_other/
 
+testdata/
+
+*.test.ini
 
 
 

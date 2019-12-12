@@ -4,11 +4,63 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/hacash/core/inicnf"
 	"github.com/hacash/core/sys"
 	"os"
 	"path"
 )
+
+type P2PManagerConfig struct {
+	TCPListenPort       int
+	UDPListenPort       int
+	Name                string
+	ID                  []byte
+	lookupConnectMaxLen int
+}
+
+func NewP2PManagerConfigByID(id []byte) *P2PManagerConfig {
+	if len(id) != 16 {
+		panic("P2PManagerConfig ID len must be 16.")
+	}
+	cnf := &P2PManagerConfig{
+		Name:                "hnode_" + hex.EncodeToString(id),
+		ID:                  id,
+		TCPListenPort:       3337,
+		UDPListenPort:       3336,
+		lookupConnectMaxLen: 128,
+	}
+	return cnf
+}
+
+// new p2p
+func NewP2PManagerConfig(cnffile *sys.Inicnf) *P2PManagerConfig {
+	data_dir := path.Join(cnffile.MustDataDir(), "node")
+	p2pid := readIDFromDisk(data_dir)
+	if p2pid == nil {
+		p2pid = make([]byte, 16)
+		rand.Read(p2pid) // random id
+		saveIDToDisk(data_dir, p2pid)
+	}
+	// create cnf
+	cnf := NewP2PManagerConfigByID(p2pid)
+
+	return cnf
+}
+
+func saveIDToDisk(data_dir string, p2pid []byte) {
+	os.MkdirAll(path.Base(data_dir), os.ModePerm)
+	idfile, e1 := os.OpenFile(path.Join(data_dir, "id.json"), os.O_RDWR|os.O_CREATE, 0777)
+	if e1 == nil {
+		idjsonobj := struct {
+			id string
+		}{}
+		idjsonobj.id = hex.EncodeToString(p2pid)
+		jsonbts, e := json.Marshal(idjsonobj)
+		if e == nil {
+			idfile.Write(jsonbts)
+		}
+		idfile.Close()
+	}
+}
 
 func readIDFromDisk(data_dir string) []byte {
 	var p2pid []byte = nil
@@ -27,30 +79,8 @@ func readIDFromDisk(data_dir string) []byte {
 				}
 			}
 		}
-		// save
-		if p2pid == nil {
-			p2pid = make([]byte, 16)
-			rand.Read(p2pid) // random id
-			// save to disk
-			idjsonobj.id = hex.EncodeToString(p2pid)
-			jsonbts, e := json.Marshal(idjsonobj)
-			if e == nil {
-				idfile.Write(jsonbts)
-			}
-		}
 		idfile.Close()
 	}
 	// return
 	return p2pid
-}
-
-// new p2p
-func NewP2PManagerByIniCnf(cnffile *inicnf.File) (*P2PManager, error) {
-	data_dir := path.Join(sys.CnfMustDataDir(cnffile.Section("").Key("data_dir").String()), "node")
-	p2pid := readIDFromDisk(data_dir)
-	// create cnf
-	cnf := NewP2PManagerConfig(p2pid)
-	peercnf := NewPeerManagerConfig()
-
-	return NewP2PManager(cnf, peercnf)
 }
