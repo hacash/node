@@ -4,6 +4,8 @@ import (
 	"github.com/hacash/core/interfaces"
 	"github.com/hacash/mint/blockchain"
 	"github.com/hacash/node/p2p"
+	"math/rand"
+	"time"
 )
 
 type HacashNode struct {
@@ -28,6 +30,7 @@ func NewHacashNode(config *HacashNodeConfig) (*HacashNode, error) {
 		return nil, err
 	}
 	hacashnode.p2p = p2pmng
+	p2pmng.SetMsgHandler(hacashnode) // handle msg
 
 	// blockchain
 	bccnf := blockchain.NewBlockChainConfig(config.cnffile)
@@ -43,6 +46,8 @@ func NewHacashNode(config *HacashNodeConfig) (*HacashNode, error) {
 
 // Start
 func (hn *HacashNode) Start() {
+
+	rand.Seed(time.Now().Unix())
 
 	hn.p2p.Start()
 

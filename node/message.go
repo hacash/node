@@ -7,6 +7,8 @@ import (
 
 // OnConnected
 func (hn *HacashNode) OnConnected(msghandler p2p.MsgCommunicator, peer p2p.MsgPeer) {
+	// req status and hand shake
+	peer.SendDataMsg(handler.MsgTypeRequestStatus, nil)
 
 }
 
@@ -17,6 +19,8 @@ func (hn *HacashNode) OnDisconnected(peer p2p.MsgPeer) {
 
 // OnConnected
 func (hn *HacashNode) OnMsgData(msghandler p2p.MsgCommunicator, peer p2p.MsgPeer, msgty uint16, msgbody []byte) {
+
+	// fmt.Println("OnMsgData", peer.Describe(), msgty, msgbody)
 
 	if msgty == handler.MsgTypeRequestStatus {
 		handler.SendStatusToPeer(hn.blockchain, peer)

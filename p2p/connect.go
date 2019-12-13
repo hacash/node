@@ -38,9 +38,23 @@ func (p2p *P2PManager) TryConnectToPeer(local_addr *net.TCPAddr, target_addr *ne
 	}
 	isConnPublic := true
 	if target_addr.IP.IsLoopback() {
-		isConnPublic = false
+		// isConnPublic = false
 	}
 	// hankshake and handle msg
 	p2p.handleNewConn(conn, isConnPublic)
 	return nil
+}
+
+// Static Boot Nodes
+func (p2p *P2PManager) tryConnectToStaticBootNodes() {
+	if len(p2p.config.StaticHnodeAddrs) == 0 {
+		return
+	}
+	// try
+	for _, tcp := range p2p.config.StaticHnodeAddrs {
+		err := p2p.TryConnectToPeer(nil, tcp)
+		if err != nil {
+			fmt.Println("[P2P Error] Try Connect To Static Boot Node:", err)
+		}
+	}
 }

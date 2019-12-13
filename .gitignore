@@ -17,8 +17,19 @@ p2p_t/
 p2p_other/
 
 testdata/
+testdata*/
 
 *.test.ini
+*test*.ini
+
+test*
+
+
+
+
+
+
+
 
 
 

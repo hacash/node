@@ -5,16 +5,20 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"github.com/hacash/core/sys"
+	"net"
 	"os"
 	"path"
 )
 
 type P2PManagerConfig struct {
-	Datadir             string
-	TCPListenPort       int
-	UDPListenPort       int
-	Name                string
-	ID                  []byte
+	Datadir       string
+	TCPListenPort int
+	UDPListenPort int
+	Name          string
+	ID            []byte
+
+	StaticHnodeAddrs []*net.TCPAddr // IP:port ...
+
 	lookupConnectMaxLen int
 }
 
@@ -28,6 +32,7 @@ func NewP2PManagerConfigByID(id []byte) *P2PManagerConfig {
 		TCPListenPort:       3337,
 		UDPListenPort:       3336,
 		lookupConnectMaxLen: 128,
+		StaticHnodeAddrs:    make([]*net.TCPAddr, 0),
 	}
 	return cnf
 }
@@ -44,6 +49,28 @@ func NewP2PManagerConfig(cnffile *sys.Inicnf) *P2PManagerConfig {
 	// create cnf
 	cnf := NewP2PManagerConfigByID(p2pid)
 	cnf.Datadir = data_dir
+	ini_section_p2p := cnffile.Section("p2p")
+	// port
+	ini_listen_port := ini_section_p2p.Key("listen_port").MustInt(3337)
+	ini_udp_port := ini_section_p2p.Key("udp_port").MustInt(0)
+	if ini_udp_port == 0 {
+		ini_udp_port = ini_listen_port - 1
+	}
+	cnf.TCPListenPort = ini_listen_port
+	cnf.UDPListenPort = ini_udp_port
+	// name
+	p2pname := ini_section_p2p.Key("name").MustString("")
+	if p2pname != "" {
+		cnf.Name = p2pname
+	}
+	// static node url bootnodes
+	boot_nodes := cnffile.StringValueList("p2p", "boot_nodes")
+	for _, one := range boot_nodes {
+		if tcp, err := net.ResolveTCPAddr("tcp", one); err == nil {
+			cnf.StaticHnodeAddrs = append(cnf.StaticHnodeAddrs, tcp)
+		}
+	}
+	// ok
 	return cnf
 }
 

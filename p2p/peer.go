@@ -98,6 +98,7 @@ func (p *Peer) AddKnownPeerId(pid []byte) {
 	}
 }
 
+// interface api
 func (p *Peer) AddKnowledge(KnowledgeKey string, KnowledgeValue string) bool {
 	knval := mapset.NewSet()
 	if actual, ldok := p.knownPeerKnowledgeDuplicateRemoval.LoadOrStore(KnowledgeKey, knval); ldok {

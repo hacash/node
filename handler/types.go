@@ -21,6 +21,7 @@ const (
 )
 
 func msgParseSendRequestBlocks(peer p2p.MsgPeer, startheigit uint64) {
+	fmt.Print("sync block start height: ", startheigit, " ... ")
 	startheight := make([]byte, 8)
 	binary.BigEndian.PutUint64(startheight, startheigit)
 	peer.SendDataMsg(MsgTypeRequestBlocks, startheight)

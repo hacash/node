@@ -1,7 +1,6 @@
 package p2p
 
 import (
-	"fmt"
 	"net"
 )
 
@@ -10,7 +9,7 @@ func (p2p *P2PManager) handleUDPMessage(addr *net.UDPAddr, msgty uint16, msgbody
 	//fmt.Println("handleUDPMessage", msgty, len(msgbody), msgbody)
 
 	if UDPMsgTypeEnquirePublic == msgty {
-		fmt.Println("UDPMsgTypeEnquirePublic == msgty")
+		//fmt.Println("UDPMsgTypeEnquirePublic == msgty")
 		if len(msgbody) != 16+4 {
 			return
 		}
@@ -22,7 +21,7 @@ func (p2p *P2PManager) handleUDPMessage(addr *net.UDPAddr, msgty uint16, msgbody
 			return
 		}
 		// send msg
-		fmt.Println("UDPMsgTypeEnquirePublic", msgty, len(msgbody), msgbody)
+		//fmt.Println("UDPMsgTypeEnquirePublic", msgty, len(msgbody), msgbody)
 		callpeer.SendMsg(TCPMsgTypeReplyPublic, msgbody[16:20])
 		return
 	}

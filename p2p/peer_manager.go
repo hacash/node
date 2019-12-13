@@ -112,8 +112,14 @@ func (pm *PeerManager) loop() {
 	}
 }
 
+// interface api
 func (pm *PeerManager) PeerLen() int {
 	return pm.publicPeerGroup.peers.Cardinality() + pm.interiorPeerGroup.peers.Cardinality()
+}
+
+// interface api
+func (pm *PeerManager) FindAnyOnePeerBetterBePublic() MsgPeer {
+	return pm.FindRandomOnePeerBetterBePublic()
 }
 
 func (pm *PeerManager) FindRandomOnePeerBetterBePublic() *Peer {
