@@ -1,4 +1,4 @@
-package node
+package backend
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 )
 
 // download block data form ws api
-func (h *HacashNode) DownloadBlocksDataFromWebSocketApi(ws_url string, start_height uint64) (uint64, error) {
+func (h *Backend) DownloadBlocksDataFromWebSocketApi(ws_url string, start_height uint64) (uint64, error) {
 
 	// websocket
 	// ws_url = "ws://127.0.0.1:3338/websocket"

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/hacash/core/sys"
-	"github.com/hacash/node/node"
+	"github.com/hacash/node/backend"
 	"os"
 	"os/signal"
 	"time"
@@ -25,8 +25,8 @@ func main() {
 	}
 
 	hinicnf, _ := sys.LoadInicnf(test_ini)
-	hcnf := node.NewHacashNodeConfig(hinicnf)
-	hnode, err := node.NewHacashNode(hcnf)
+	hcnf := backend.NewBackendConfig(hinicnf)
+	hnode, err := backend.NewBackend(hcnf)
 	if err != nil {
 		fmt.Println(err)
 		return

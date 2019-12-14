@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"github.com/hacash/core/blocks"
 	"github.com/hacash/core/interfaces"
-	"github.com/hacash/node/p2p"
 )
 
-func GetBlocksData(blockchain interfaces.BlockChain, peer p2p.MsgPeer, msgbody []byte) {
+func GetBlocksData(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
 	if len(msgbody) < 3*8 {
 		return
 	}
@@ -20,7 +19,7 @@ func GetBlocksData(blockchain interfaces.BlockChain, peer p2p.MsgPeer, msgbody [
 	allBlockDatas := msgbody[24:]
 	alldtslen := len(allBlockDatas)
 	// print
-	fmt.Print("got blocks height: ", startHeight, " ~ ", endHeight, " , inserting ... ")
+	fmt.Print("got blocks: ", startHeight, " ~ ", endHeight, ", inserting... ")
 	// parse block
 	seek := uint32(0)
 	for {
@@ -45,7 +44,7 @@ func GetBlocksData(blockchain interfaces.BlockChain, peer p2p.MsgPeer, msgbody [
 		}
 		realEndHeight = oneblock.GetHeight()
 	}
-	fmt.Println("OK.")
+	fmt.Println("OK")
 	if realEndHeight == lastestHeight {
 		fmt.Println("all block sync successfully.")
 	}
@@ -57,7 +56,7 @@ func GetBlocksData(blockchain interfaces.BlockChain, peer p2p.MsgPeer, msgbody [
 	msgParseSendRequestBlocks(peer, endHeight+1)
 }
 
-func SendBlocksData(blockchain interfaces.BlockChain, peer p2p.MsgPeer, msgbody []byte) {
+func SendBlocksData(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
 
 	//fmt.Println("SendBlocksData", msgbody)
 

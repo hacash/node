@@ -1,4 +1,4 @@
-package node
+package backend
 
 import (
 	"fmt"
@@ -17,8 +17,8 @@ func Test_t1(t *testing.T) {
 		return
 	}
 
-	hcnf := NewHacashNodeConfig(cnffile)
-	hnode, e2 := NewHacashNode(hcnf)
+	hcnf := NewBackendConfig(cnffile)
+	hnode, e2 := NewBackend(hcnf)
 	if e2 != nil {
 		fmt.Println(e2)
 		return

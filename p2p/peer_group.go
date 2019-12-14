@@ -93,10 +93,12 @@ func (pm *PeerGroup) dropPeerUnsafeByID(pid []byte) bool {
 func (pm *PeerGroup) addPeerSuccess(peer *Peer) (bool, error) {
 	//fmt.Println("addPeerSuccess", hex.EncodeToString(peer.ID))
 	publicstr := ""
+	rmtaddrstr := ""
 	if peer.publicIPv4 != nil {
 		publicstr = "@public "
+		rmtaddrstr = "addr: " + peer.TcpConn.RemoteAddr().String()
 	}
-	fmt.Println("[Peer] successfully connected "+publicstr+"peer id:", hex.EncodeToString(peer.ID), "name:", peer.Name, "addr:", peer.TcpConn.RemoteAddr().String())
+	fmt.Println("[Peer] Successfully connected "+publicstr+"peer id:", hex.EncodeToString(peer.ID), "name:", peer.Name, rmtaddrstr)
 	pm.peers.Add(peer)
 	return true, nil
 }

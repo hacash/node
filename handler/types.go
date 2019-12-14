@@ -3,7 +3,7 @@ package handler
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/hacash/node/p2p"
+	"github.com/hacash/core/interfaces"
 )
 
 const (
@@ -20,14 +20,14 @@ const (
 	MsgTypeDiscoverNewBlock  uint16 = 8
 )
 
-func msgParseSendRequestBlocks(peer p2p.MsgPeer, startheigit uint64) {
-	fmt.Print("sync block start height: ", startheigit, " ... ")
+func msgParseSendRequestBlocks(peer interfaces.MsgPeer, startheigit uint64) {
+	fmt.Print("sync blocks: ", startheigit, "... ")
 	startheight := make([]byte, 8)
 	binary.BigEndian.PutUint64(startheight, startheigit)
 	peer.SendDataMsg(MsgTypeRequestBlocks, startheight)
 }
 
-func msgParseSendRequestBlockHashList(peer p2p.MsgPeer, reqnum uint8, startheigit uint64) {
+func msgParseSendRequestBlockHashList(peer interfaces.MsgPeer, reqnum uint8, startheigit uint64) {
 	buf := make([]byte, 1+8)
 	buf[0] = reqnum
 	binary.BigEndian.PutUint64(buf[1:], startheigit)

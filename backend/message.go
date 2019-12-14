@@ -1,24 +1,24 @@
-package node
+package backend
 
 import (
+	"github.com/hacash/core/interfaces"
 	"github.com/hacash/node/handler"
-	"github.com/hacash/node/p2p"
 )
 
 // OnConnected
-func (hn *HacashNode) OnConnected(msghandler p2p.MsgCommunicator, peer p2p.MsgPeer) {
+func (hn *Backend) OnConnected(msghandler interfaces.MsgCommunicator, peer interfaces.MsgPeer) {
 	// req status and hand shake
 	peer.SendDataMsg(handler.MsgTypeRequestStatus, nil)
 
 }
 
 // OnDisconnected
-func (hn *HacashNode) OnDisconnected(peer p2p.MsgPeer) {
+func (hn *Backend) OnDisconnected(peer interfaces.MsgPeer) {
 
 }
 
 // OnConnected
-func (hn *HacashNode) OnMsgData(msghandler p2p.MsgCommunicator, peer p2p.MsgPeer, msgty uint16, msgbody []byte) {
+func (hn *Backend) OnMsgData(msghandler interfaces.MsgCommunicator, peer interfaces.MsgPeer, msgty uint16, msgbody []byte) {
 
 	// fmt.Println("OnMsgData", peer.Describe(), msgty, msgbody)
 

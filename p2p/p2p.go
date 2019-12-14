@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	mapset "github.com/deckarep/golang-set"
+	"github.com/hacash/core/interfaces"
 	"sync"
 	"time"
 )
@@ -31,7 +32,7 @@ type P2PManager struct {
 	recordStaticPublicPeerTCPAddrs mapset.Set // static setting
 
 	// handler
-	customerDataHandler MsgDataHandler
+	customerDataHandler interfaces.MsgDataHandler
 }
 
 func NewP2PManager(cnf *P2PManagerConfig, pmcnf *PeerManagerConfig) (*P2PManager, error) {
@@ -66,7 +67,7 @@ func NewP2PManager(cnf *P2PManagerConfig, pmcnf *PeerManagerConfig) (*P2PManager
 	return p2p, nil
 }
 
-func (p2p *P2PManager) SetMsgHandler(handler MsgDataHandler) {
+func (p2p *P2PManager) SetMsgHandler(handler interfaces.MsgDataHandler) {
 	p2p.customerDataHandler = handler
 }
 

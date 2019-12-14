@@ -7,7 +7,6 @@ import (
 	"github.com/hacash/core/fields"
 	"github.com/hacash/core/genesis"
 	"github.com/hacash/core/interfaces"
-	"github.com/hacash/node/p2p"
 )
 
 const (
@@ -66,7 +65,7 @@ func (this *HandShakeStatusData) Parse(buf []byte, seek uint32) (uint32, error) 
 
 ////////////////////////////////////////////////////////
 
-func SendStatusToPeer(blockchain interfaces.BlockChain, peer p2p.MsgPeer) {
+func SendStatusToPeer(blockchain interfaces.BlockChain, peer interfaces.MsgPeer) {
 
 	lastblock, err := blockchain.State().ReadLastestBlockHeadAndMeta()
 	if err != nil {
@@ -88,7 +87,7 @@ func SendStatusToPeer(blockchain interfaces.BlockChain, peer p2p.MsgPeer) {
 	peer.SendDataMsg(MsgTypeStatus, msgdata)
 }
 
-func GetStatus(blockchain interfaces.BlockChain, peer p2p.MsgPeer, msgbody []byte) {
+func GetStatus(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
 
 	if len(msgbody) != HandShakeStatusDataSize {
 		peer.Disconnect()

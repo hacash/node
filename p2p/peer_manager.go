@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	mapset "github.com/deckarep/golang-set"
+	"github.com/hacash/core/interfaces"
 	"github.com/hacash/core/sys"
 	"net"
 	"sync"
@@ -118,7 +119,7 @@ func (pm *PeerManager) PeerLen() int {
 }
 
 // interface api
-func (pm *PeerManager) FindAnyOnePeerBetterBePublic() MsgPeer {
+func (pm *PeerManager) FindAnyOnePeerBetterBePublic() interfaces.MsgPeer {
 	return pm.FindRandomOnePeerBetterBePublic()
 }
 

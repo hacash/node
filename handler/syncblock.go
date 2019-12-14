@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"github.com/hacash/core/interfaces"
-	"github.com/hacash/node/p2p"
 )
 
-func SendBlockHashList(blockchain interfaces.BlockChain, peer p2p.MsgPeer, msgbody []byte) {
+func SendBlockHashList(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
 	if len(msgbody) != 1+8 {
 		return // error len
 	}
@@ -38,7 +37,7 @@ func SendBlockHashList(blockchain interfaces.BlockChain, peer p2p.MsgPeer, msgbo
 	peer.SendDataMsg(MsgTypeBlockHashList, resdatas.Bytes())
 }
 
-func GetBlockHashList(blockchain interfaces.BlockChain, peer p2p.MsgPeer, msgbody []byte) {
+func GetBlockHashList(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
 	if len(msgbody) < 8 {
 		return // error len
 	}
@@ -57,6 +56,9 @@ func GetBlockHashList(blockchain interfaces.BlockChain, peer p2p.MsgPeer, msgbod
 	bigHei := lastestHeight
 	hashnum := uint64((len(allhashes) / 32))
 	if hashnum > lastestHeight {
+		return
+	}
+	if hashnum == 0 {
 		return
 	}
 	smallHei := lastestHeight - hashnum

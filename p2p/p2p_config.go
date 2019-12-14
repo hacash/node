@@ -27,7 +27,7 @@ func NewP2PManagerConfigByID(id []byte) *P2PManagerConfig {
 		panic("P2PManagerConfig ID len must be 16.")
 	}
 	cnf := &P2PManagerConfig{
-		Name:                "hnode_" + hex.EncodeToString(id),
+		Name:                "hnode_" + string([]byte(hex.EncodeToString(id))[0:14]),
 		ID:                  id,
 		TCPListenPort:       3337,
 		UDPListenPort:       3336,

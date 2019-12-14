@@ -1,24 +1,22 @@
-package node
+package backend
 
 import (
 	"github.com/hacash/core/interfaces"
 	"github.com/hacash/mint/blockchain"
 	"github.com/hacash/node/p2p"
-	"math/rand"
-	"time"
 )
 
-type HacashNode struct {
-	config *HacashNodeConfig
+type Backend struct {
+	config *BackendConfig
 
 	p2p *p2p.P2PManager
 
 	blockchain interfaces.BlockChain
 }
 
-func NewHacashNode(config *HacashNodeConfig) (*HacashNode, error) {
+func NewBackend(config *BackendConfig) (*Backend, error) {
 
-	hacashnode := &HacashNode{
+	backend := &Backend{
 		config: config,
 	}
 
@@ -29,8 +27,8 @@ func NewHacashNode(config *HacashNodeConfig) (*HacashNode, error) {
 	if err != nil {
 		return nil, err
 	}
-	hacashnode.p2p = p2pmng
-	p2pmng.SetMsgHandler(hacashnode) // handle msg
+	backend.p2p = p2pmng
+	p2pmng.SetMsgHandler(backend) // handle msg
 
 	// blockchain
 	bccnf := blockchain.NewBlockChainConfig(config.cnffile)
@@ -38,16 +36,14 @@ func NewHacashNode(config *HacashNodeConfig) (*HacashNode, error) {
 	if err2 != nil {
 		return nil, err2
 	}
-	hacashnode.blockchain = bc
+	backend.blockchain = bc
 
 	// return
-	return hacashnode, nil
+	return backend, nil
 }
 
 // Start
-func (hn *HacashNode) Start() {
-
-	rand.Seed(time.Now().Unix())
+func (hn *Backend) Start() {
 
 	hn.p2p.Start()
 

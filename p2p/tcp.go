@@ -140,9 +140,9 @@ func (p2p *P2PManager) handleNewConn(conn net.Conn, isConnectToPublic bool) {
 			if peer.isPermitCompleteNode {
 				p2p.AddOldPublicPeerAddr(peer.publicIPv4, peer.tcpListenPort) // add addr back
 			}
-			fmt.Println("[Peer] disconnected @public peer name:", peer.Name, "addr:", peer.TcpConn.RemoteAddr().String())
+			fmt.Println("[Peer] Disconnected @public peer name:", peer.Name, "addr:", peer.TcpConn.RemoteAddr().String())
 		} else {
-			fmt.Println("[Peer] disconnected peer:", peer.Name)
+			fmt.Println("[Peer] Disconnected peer:", peer.Name)
 		}
 		if p2p.customerDataHandler != nil {
 			p2p.customerDataHandler.OnDisconnected(peer) // disconnect event call
