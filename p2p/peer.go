@@ -3,7 +3,7 @@ package p2p
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/hacash/node/mapset"
+	"github.com/hacash/chain/mapset"
 	"net"
 	"strconv"
 	"sync"

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/hacash/node/mapset"
+	"github.com/hacash/chain/mapset"
 	"sync"
 )
 

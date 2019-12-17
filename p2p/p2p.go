@@ -3,8 +3,8 @@ package p2p
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/hacash/chain/mapset"
 	"github.com/hacash/core/interfaces"
-	"github.com/hacash/node/mapset"
 	"sync"
 	"time"
 )

@@ -3,7 +3,7 @@ package p2p
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/hacash/node/mapset"
+	"github.com/hacash/chain/mapset"
 	"net"
 )
 
