@@ -50,3 +50,8 @@ func (hn *Backend) Start() {
 	go hn.loop()
 
 }
+
+// Start
+func (hn *Backend) GetBlockChain() interfaces.BlockChain {
+	return hn.blockchain
+}
