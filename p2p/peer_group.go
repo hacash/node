@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	mapset "github.com/deckarep/golang-set"
+	"github.com/hacash/node/mapset"
 	"sync"
 )
 

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/hacash/core/blocks"
 	"github.com/hacash/core/interfaces"
-	"golang.org/x/net/websocket"
+	"github.com/hacash/node/websocket"
 	"strconv"
 )
 

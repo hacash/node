@@ -3,7 +3,7 @@ package p2p
 import (
 	"encoding/binary"
 	"fmt"
-	mapset "github.com/deckarep/golang-set"
+	"github.com/hacash/node/mapset"
 	"net"
 	"strconv"
 	"sync"

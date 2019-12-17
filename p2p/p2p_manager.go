@@ -3,7 +3,7 @@ package p2p
 import (
 	"bytes"
 	"encoding/binary"
-	mapset "github.com/deckarep/golang-set"
+	"github.com/hacash/node/mapset"
 	"net"
 )
 

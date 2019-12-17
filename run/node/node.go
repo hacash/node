@@ -36,7 +36,7 @@ func main() {
 	hnode.Start()
 
 	// download block datas
-	//hnode.DownloadBlocksDataFromWebSocketApi( "ws://127.0.0.1:3338/websocket", 1 )
+	hnode.DownloadBlocksDataFromWebSocketApi("ws://127.0.0.1:3338/websocket", 1)
 
 	s := <-c
 	fmt.Println("Got signal:", s)

@@ -3,8 +3,8 @@ package p2p
 import (
 	"encoding/hex"
 	"fmt"
-	mapset "github.com/deckarep/golang-set"
 	"github.com/hacash/core/interfaces"
+	"github.com/hacash/node/mapset"
 	"sync"
 	"time"
 )
