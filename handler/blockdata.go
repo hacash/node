@@ -76,7 +76,7 @@ func SendBlocksData(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, m
 	maxsendsize := int(1024 * 512)
 	totalsize := 0
 	for curhei := startHeight; curhei <= lastestHeight; curhei++ {
-		oneblkbts, err := blockstore.ReadBlockBytesByHeight(curhei, 0)
+		_, oneblkbts, err := blockstore.ReadBlockBytesByHeight(curhei, 0)
 		if err != nil {
 			return
 		}
