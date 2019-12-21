@@ -218,7 +218,7 @@ func (p2p *P2PManager) sendMsgToEnquirePublic(peer *Peer) {
 	}
 	data := make([]byte, 2+16+4)
 	binary.BigEndian.PutUint16(data[0:2], UDPMsgTypeEnquirePublic)
-	copy(data[2:18], p2p.selfPeerId)
+	copy(data[2:18], p2p.myselfpeer.ID)
 	binary.BigEndian.PutUint32(data[18:22], checkcode)
 	udpconn.Write(data)
 	udpconn.Close()

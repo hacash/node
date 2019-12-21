@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"github.com/hacash/chain/mapset"
@@ -62,8 +63,8 @@ func NewPeerManager(cnf *PeerManagerConfig, p2p *P2PManager) *PeerManager {
 	pm := &PeerManager{
 		p2p:               p2p,
 		config:            cnf,
-		publicPeerGroup:   NewPeerGroup(p2p.selfPeerId, ppgmlr, ppgmls),
-		interiorPeerGroup: NewPeerGroup(p2p.selfPeerId, ipgmlr, ipgmls),
+		publicPeerGroup:   NewPeerGroup(p2p.myselfpeer.ID, ppgmlr, ppgmls),
+		interiorPeerGroup: NewPeerGroup(p2p.myselfpeer.ID, ipgmlr, ipgmls),
 		knownPeerIds:      mapset.NewSet(),
 		peersChangeLock:   sync.Mutex{},
 	}
@@ -134,6 +135,13 @@ func (pm *PeerManager) FindRandomOnePeerBetterBePublic() *Peer {
 		pp.peers.Add(tarpeer)
 	}
 	return tarpeer.(*Peer)
+}
+
+// interface api
+func (pm *PeerManager) BroadcastDataMessageToUnawarePeers(ty uint16, msgbody []byte, KnowledgeKey string, KnowledgeValue string) {
+	data := make([]byte, 2)
+	binary.BigEndian.PutUint16(data, ty)
+	pm.BroadcastMessageToUnawarePeers(TCPMsgTypeData, append(data, msgbody...), KnowledgeKey, KnowledgeValue)
 }
 
 func (pm *PeerManager) BroadcastMessageToUnawarePeers(ty uint16, msgbody []byte, KnowledgeKey string, KnowledgeValue string) {

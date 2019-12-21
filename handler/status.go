@@ -126,7 +126,7 @@ func GetStatus(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbod
 	}
 	mylastblockheight := lastblock.GetHeight()
 	// fork or sync new block
-	if mylastblockheight == 0 {
+	if mylastblockheight == 0 && otherStatusObj.LastestBlockHeight > 0 {
 		// first sync block data
 		msgParseSendRequestBlocks(peer, 1)
 	} else if uint64(otherStatusObj.LastestBlockHeight) > mylastblockheight {

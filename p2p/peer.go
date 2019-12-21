@@ -115,9 +115,21 @@ func (p *Peer) AddKnowledge(KnowledgeKey string, KnowledgeValue string) bool {
 	return true
 }
 
+func (p *Peer) CheckKnowledge(KnowledgeKey string, KnowledgeValue string) bool {
+	if actual, ldok := p.knownPeerKnowledgeDuplicateRemoval.Load(KnowledgeKey); ldok {
+		actknow := actual.(mapset.Set)
+		if actknow.Contains(KnowledgeValue) {
+			return true // known it
+		}
+	}
+	return false //not find
+}
+
 func (p *Peer) SendUnawareMsg(ty uint16, msgbody []byte, KnowledgeKey string, KnowledgeValue string) error {
+	//fmt.Println("SendUnawareMsg:", KnowledgeKey, KnowledgeValue)
 	if p.AddKnowledge(KnowledgeKey, KnowledgeValue) {
 		// add success and send data
+		//fmt.Println("SendUnawareMsg SendMsg:", len(msgbody))
 		return p.SendMsg(ty, msgbody)
 	}
 	return nil

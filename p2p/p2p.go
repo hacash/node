@@ -15,10 +15,11 @@ type P2PManager struct {
 	peerManager *PeerManager
 	lookupPeers mapset.Set // []*Peer
 
-	selfPeerName       string
-	selfPeerId         []byte // len = 16
+	//selfPeerName       string
+	//selfPeerId         []byte // len = 16
 	selfRemotePublicIP []byte // is public ?
 
+	myselfpeer *Peer
 	//selfRemoteAddr net.Addr
 
 	changeStatusLock sync.Mutex
@@ -50,8 +51,10 @@ func NewP2PManager(cnf *P2PManagerConfig, pmcnf *PeerManagerConfig) (*P2PManager
 		customerDataHandler:            nil,
 	}
 
-	p2p.selfPeerId = cnf.ID
-	p2p.selfPeerName = cnf.Name
+	//p2p.selfPeerId = cnf.ID
+	//p2p.selfPeerName = cnf.Name
+
+	p2p.myselfpeer = NewPeer(cnf.ID, cnf.Name)
 
 	// -------- TEST START --------
 	//p2p.selfPeerId = make([]byte, 16)
@@ -82,7 +85,7 @@ func (p2p *P2PManager) Start() {
 
 	go p2p.tryConnectToStaticBootNodes()
 
-	fmt.Println("[Peer] Start p2p manager id:", hex.EncodeToString(p2p.selfPeerId), "name:", p2p.selfPeerName,
+	fmt.Println("[Peer] Start p2p manager id:", hex.EncodeToString(p2p.myselfpeer.ID), "name:", p2p.myselfpeer.Name,
 		"listen on port TCP:", p2p.config.TCPListenPort, "UDP:", p2p.config.UDPListenPort)
 
 }

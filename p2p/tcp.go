@@ -165,8 +165,8 @@ func (p2p *P2PManager) sendHandShakeMessageToConn(conn net.Conn) {
 	binary.BigEndian.PutUint16(data[0:2], P2PMustVersion)
 	binary.BigEndian.PutUint16(data[2:4], uint16(p2p.config.TCPListenPort))
 	binary.BigEndian.PutUint16(data[4:6], uint16(p2p.config.UDPListenPort))
-	copy(data[6:22], p2p.selfPeerId)
-	copy(data[22:54], p2p.selfPeerName)
+	copy(data[6:22], p2p.myselfpeer.ID)
+	copy(data[22:54], p2p.myselfpeer.Name)
 
 	tmp_p.SendMsg(TCPMsgTypeHandshake, data)
 }

@@ -7,6 +7,9 @@ import (
 
 // OnConnected
 func (hn *Backend) OnConnected(msghandler interfaces.MsgCommunicator, peer interfaces.MsgPeer) {
+	if hn.msghandler == nil {
+		hn.msghandler = msghandler
+	}
 	// req status and hand shake
 	peer.SendDataMsg(handler.MsgTypeRequestStatus, nil)
 
@@ -49,6 +52,17 @@ func (hn *Backend) OnMsgData(msghandler interfaces.MsgCommunicator, peer interfa
 
 	if msgty == handler.MsgTypeBlocks {
 		handler.GetBlocksData(hn.blockchain, peer, msgbody)
+		return
+	}
+
+	if msgty == handler.MsgTypeSubmitTransaction {
+		handler.GetTransactionSubmit(hn.p2p, hn.txpool, peer, msgbody)
+		return
+	}
+
+	if msgty == handler.MsgTypeDiscoverNewBlock {
+		//fmt.Println("msgty == handler.MsgTypeDiscoverNewBlock:", peer.Describe())
+		handler.GetBlockDiscover(hn.p2p, hn.blockchain, peer, msgbody)
 		return
 	}
 
