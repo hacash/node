@@ -5,7 +5,7 @@ import "time"
 func (p2p *P2PManager) loop() {
 
 	dropUnHandShakeTiker := time.NewTicker(time.Second * 13)
-	dropNotReplyPublicTiker := time.NewTicker(time.Second * 8)
+	dropNotReplyPublicTiker := time.NewTicker(time.Second * 5)
 	reconnectSomePublicPeerTiker := time.NewTicker(time.Second * 21)
 	getAddrsFromPublicPeersTiker := time.NewTicker(time.Minute * 23)
 
@@ -67,7 +67,7 @@ func (p2p *P2PManager) loop() {
 				p2p.changeStatusLock.Lock()
 				tnow := time.Now()
 				for peer, res := range p2p.waitToReplyIsPublicPeer {
-					if res.curt.Add(time.Second * 7).Before(tnow) {
+					if res.curt.Add(time.Second * 5).Before(tnow) {
 						delete(p2p.waitToReplyIsPublicPeer, peer)
 						if peer.publicIPv4 == nil {
 							p2p.AddPeerToTargetGroup(p2p.peerManager.interiorPeerGroup, peer)

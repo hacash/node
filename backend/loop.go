@@ -9,7 +9,10 @@ func (h *Backend) loop() {
 
 		case block := <-h.discoverNewBlockSuccessCh:
 			//fmt.Println("block := <- h.discoverNewBlockSuccessCh:")
-			go h.broadcastNewBlockDiscover(block)
+			blkmark := block.OriginMark()
+			if blkmark == "discover" || blkmark == "mining" {
+				go h.broadcastNewBlockDiscover(block)
+			}
 
 		}
 	}

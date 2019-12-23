@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"github.com/hacash/core/interfaces"
 )
 
@@ -66,7 +67,7 @@ func GetBlockHashList(blockchain interfaces.BlockChain, peer interfaces.MsgPeer,
 	// read my block hash
 	blockstore := blockchain.State().BlockStore()
 	i := 0
-	for curhei := bigHei; curhei >= smallHei; curhei-- {
+	for curhei := bigHei; curhei > smallHei; curhei-- {
 		myheihash, e := blockstore.ReadBlockHashByHeight(curhei)
 		if e != nil {
 			return
@@ -81,14 +82,17 @@ func GetBlockHashList(blockchain interfaces.BlockChain, peer interfaces.MsgPeer,
 		if equalForNow {
 			rollbackToHeight = curhei
 		}
-
 		i++
 	}
 
 	if rollbackToHeight > 0 {
-
-		// TODO: ROLL BACK BLOCK CHAIN
-
+		curhei, err := blockchain.RollbackToBlockHeight(rollbackToHeight)
+		if err != nil {
+			fmt.Println("RollbackToBlockHeight error", err)
+			return
+		}
+		// get block data
+		msgParseSendRequestBlocks(peer, curhei+1)
 		return
 	}
 

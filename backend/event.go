@@ -15,9 +15,6 @@ func (hn *Backend) broadcastNewBlockDiscover(block interfaces.Block) {
 	}
 	//fmt.Println("broadcastNewBlockDiscover:", 2)
 	blkhxstr := string(block.Hash())
-	if hn.p2p.CheckKnowledge("block", blkhxstr) {
-		return // im already know
-	}
 	//fmt.Println("broadcastNewBlockDiscover:", 3)
 	hn.p2p.AddKnowledge("block", blkhxstr)
 	// send
@@ -39,9 +36,6 @@ func (hn *Backend) broadcastNewTxSubmit(tx interfaces.Transaction) {
 		return
 	}
 	txhxstr := string(tx.Hash())
-	if hn.p2p.CheckKnowledge("tx", txhxstr) {
-		return // im already know
-	}
 	hn.p2p.AddKnowledge("tx", txhxstr)
 	// send
 	txdata, e1 := tx.Serialize()

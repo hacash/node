@@ -120,6 +120,17 @@ func (pm *PeerManager) PeerLen() int {
 }
 
 // interface api
+func (pm *PeerManager) GetAllPeers() []interfaces.MsgPeer {
+	peers := pm.publicPeerGroup.peers.ToSlice()
+	peers = append(peers, pm.interiorPeerGroup.peers.ToSlice()...)
+	allpeers := make([]interfaces.MsgPeer, 0)
+	for _, v := range peers {
+		allpeers = append(allpeers, v.(*Peer))
+	}
+	return allpeers
+}
+
+// interface api
 func (pm *PeerManager) FindAnyOnePeerBetterBePublic() interfaces.MsgPeer {
 	return pm.FindRandomOnePeerBetterBePublic()
 }
@@ -145,6 +156,7 @@ func (pm *PeerManager) BroadcastDataMessageToUnawarePeers(ty uint16, msgbody []b
 }
 
 func (pm *PeerManager) BroadcastMessageToUnawarePeers(ty uint16, msgbody []byte, KnowledgeKey string, KnowledgeValue string) {
+	//fmt.Println("BroadcastMessageToUnawarePeers:", pm.publicPeerGroup.peers.Cardinality(), pm.interiorPeerGroup.peers.Cardinality())
 	pm.publicPeerGroup.BroadcastMessageToUnawarePeers(ty, msgbody, KnowledgeKey, KnowledgeValue)
 	pm.interiorPeerGroup.BroadcastMessageToUnawarePeers(ty, msgbody, KnowledgeKey, KnowledgeValue)
 }

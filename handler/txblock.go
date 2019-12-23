@@ -25,7 +25,23 @@ func GetBlockDiscover(p2p *p2p.P2PManager, blockchain interfaces.BlockChain, pee
 	// insert block
 	//fmt.Println("GetBlockDiscover", 4)
 	//fmt.Println("get: MrklRoot", block.GetMrklRoot().ToHex(), hex.EncodeToString(msgbody), msgbody)
-	fmt.Printf("discover new block height: %d hash: %s try to inserting... ", block.GetHeight(), block.Hash().ToHex())
+	fmt.Printf("discover new block height: %d, txs: %d, hash: %s try to inserting ... ", block.GetHeight(), block.GetTransactionCount()-1, block.Hash().ToHex())
+	// check lastest block
+	lastest, e4 := blockchain.State().ReadLastestBlockHeadAndMeta()
+	if e4 != nil {
+		return // errro end
+	}
+	mylastblockheight := lastest.GetHeight()
+	if block.GetHeight() > mylastblockheight+1 {
+		fmt.Printf("need height %d but got %d, sync the new blocks ...\n", mylastblockheight+1, block.GetHeight())
+		// check hash fork
+		msgParseSendRequestBlockHashList(peer, 4, mylastblockheight)
+		return
+	} else if block.GetHeight() < mylastblockheight+1 {
+		fmt.Printf("need height %d but got %d, ignore.\n", mylastblockheight+1, block.GetHeight())
+		return // error block height
+	}
+	// do insert
 	block.SetOriginMark("discover")
 	err := blockchain.InsertBlock(block)
 	if err == nil {
@@ -48,5 +64,7 @@ func GetTransactionSubmit(p2p *p2p.P2PManager, pool interfaces.TxPool, peer inte
 		return //
 	}
 	peer.AddKnowledge("tx", txhxstr)
+
+	fmt.Println("GetTransactionSubmit pool.AddTx(tx)", tx.Hash().ToHex())
 	pool.AddTx(tx)
 }

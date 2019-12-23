@@ -54,7 +54,7 @@ func NewPeer(id []byte, name string) *Peer {
 func (p *Peer) Describe() string {
 	des := p.Name
 	if p.publicIPv4 != nil {
-		des += "[" + ParseIPToString(p.publicIPv4) + ":" + strconv.Itoa(p.tcpListenPort) + "]"
+		des += "(" + ParseIPToString(p.publicIPv4) + ":" + strconv.Itoa(p.tcpListenPort) + ")"
 	}
 	return des
 }
@@ -129,7 +129,7 @@ func (p *Peer) SendUnawareMsg(ty uint16, msgbody []byte, KnowledgeKey string, Kn
 	//fmt.Println("SendUnawareMsg:", KnowledgeKey, KnowledgeValue)
 	if p.AddKnowledge(KnowledgeKey, KnowledgeValue) {
 		// add success and send data
-		//fmt.Println("SendUnawareMsg SendMsg:", len(msgbody))
+		//fmt.Println("SendUnawareMsg:", p.Name, ", datalen:", len(msgbody))
 		return p.SendMsg(ty, msgbody)
 	}
 	return nil
