@@ -18,6 +18,9 @@ const (
 
 	MsgTypeSubmitTransaction uint16 = 7
 	MsgTypeDiscoverNewBlock  uint16 = 8
+
+	MsgTypeRequestTxDatas uint16 = 9
+	MsgTypeTxDatas        uint16 = 10
 )
 
 func msgParseSendRequestBlocks(peer interfaces.MsgPeer, startheigit uint64) {

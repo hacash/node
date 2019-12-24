@@ -3,16 +3,21 @@ package backend
 import (
 	"github.com/hacash/core/interfaces"
 	"github.com/hacash/node/handler"
+	"time"
 )
 
 // OnConnected
 func (hn *Backend) OnConnected(msghandler interfaces.MsgCommunicator, peer interfaces.MsgPeer) {
 	if hn.msghandler == nil {
 		hn.msghandler = msghandler
+		// download txs from pool
+		go func() {
+			time.Sleep(time.Second)
+			peer.SendDataMsg(handler.MsgTypeRequestTxDatas, nil)
+		}()
 	}
 	// req status and hand shake
 	peer.SendDataMsg(handler.MsgTypeRequestStatus, nil)
-
 }
 
 // OnDisconnected
@@ -63,6 +68,16 @@ func (hn *Backend) OnMsgData(msghandler interfaces.MsgCommunicator, peer interfa
 	if msgty == handler.MsgTypeDiscoverNewBlock {
 		//fmt.Println("msgty == handler.MsgTypeDiscoverNewBlock:", peer.Describe())
 		handler.GetBlockDiscover(hn.p2p, hn.blockchain, peer, msgbody)
+		return
+	}
+
+	if msgty == handler.MsgTypeRequestTxDatas {
+		handler.GetRequestTxDatas(hn.txpool, peer)
+		return
+	}
+
+	if msgty == handler.MsgTypeTxDatas {
+		handler.GetTxDatas(hn.txpool, msgbody)
 		return
 	}
 

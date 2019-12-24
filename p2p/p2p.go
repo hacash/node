@@ -51,6 +51,10 @@ func NewP2PManager(cnf *P2PManagerConfig, pmcnf *PeerManagerConfig) (*P2PManager
 		customerDataHandler:            nil,
 	}
 
+	for _, v := range cnf.StaticHnodeAddrs {
+		p2p.recordStaticPublicPeerTCPAddrs.Add(string(ParseTCPAddrToIPPortBytes(v)))
+	}
+
 	//p2p.selfPeerId = cnf.ID
 	//p2p.selfPeerName = cnf.Name
 
