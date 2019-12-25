@@ -35,7 +35,7 @@ func (hn *Backend) broadcastNewTxSubmit(tx interfaces.Transaction) {
 	if hn.msghandler == nil {
 		return
 	}
-	txhxstr := string(tx.Hash())
+	txhxstr := string(tx.HashWithFee())
 	hn.p2p.AddKnowledge("tx", txhxstr)
 	// send
 	txdata, e1 := tx.Serialize()

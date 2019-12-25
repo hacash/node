@@ -6,6 +6,11 @@ import (
 	"github.com/hacash/core/interfaces"
 	"github.com/hacash/core/transactions"
 	"github.com/hacash/node/p2p"
+	"time"
+)
+
+const (
+	time_format_layout = "01/02 15:04:05"
 )
 
 func GetBlockDiscover(p2p *p2p.P2PManager, blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
@@ -25,7 +30,8 @@ func GetBlockDiscover(p2p *p2p.P2PManager, blockchain interfaces.BlockChain, pee
 	// insert block
 	//fmt.Println("GetBlockDiscover", 4)
 	//fmt.Println("get: MrklRoot", block.GetMrklRoot().ToHex(), hex.EncodeToString(msgbody), msgbody)
-	fmt.Printf("discover new block height: %d, txs: %d, hash: %s try to inserting ... ", block.GetHeight(), block.GetTransactionCount()-1, block.Hash().ToHex())
+	fmt.Printf("discover new block height: %d, txs: %d, hash: %s, time: %s, try to inserting ... ",
+		block.GetHeight(), block.GetTransactionCount()-1, block.Hash().ToHex(), time.Unix(int64(block.GetTimestamp()), 0).Format(time_format_layout))
 	// check lastest block
 	lastest, e4 := blockchain.State().ReadLastestBlockHeadAndMeta()
 	if e4 != nil {
@@ -59,12 +65,12 @@ func GetTransactionSubmit(p2p *p2p.P2PManager, pool interfaces.TxPool, peer inte
 	if e1 != nil {
 		return // error end
 	}
-	txhxstr := string(tx.Hash())
+	txhxstr := string(tx.HashWithFee())
 	if p2p.CheckKnowledge("tx", txhxstr) {
 		return //
 	}
 	peer.AddKnowledge("tx", txhxstr)
 
-	fmt.Println("GetTransactionSubmit pool.AddTx(tx)", tx.Hash().ToHex())
+	//fmt.Println("GetTransactionSubmit to Add Txpool:", tx.Hash().ToHex())
 	pool.AddTx(tx)
 }
