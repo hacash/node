@@ -6,15 +6,69 @@ import (
 	"fmt"
 	"github.com/hacash/core/blocks"
 	"github.com/hacash/core/interfaces"
+	"github.com/hacash/mint"
 	"github.com/hacash/node/websocket"
 	"strconv"
 )
 
 // download block data form ws api
+func (h *Backend) SyncBlockFromWebSocketApi(ws_url string) (error) {
+
+	// websocket
+	// ws_url = "ws://127.0.0.1:3338/ws/sync"
+	wsConn, e2 := websocket.Dial(ws_url, "ws", "http://127.0.0.1/")
+	if e2 != nil {
+		fmt.Println(e2)
+		return e2
+	}
+
+	curblk, err := h.blockchain.State().ReadLastestBlockHeadAndMeta()
+	if err != nil {
+		return err
+	}
+	defer wsConn.Close()
+
+	target_height := curblk.GetHeight() + 1
+
+	go wsConn.Write([]byte("syncblock " + strconv.FormatUint(target_height, 10)))
+
+	rdata := make([]byte, mint.SingleBlockMaxSize * 3 / 2)
+
+	rn, e := wsConn.Read(rdata)
+	if e != nil {
+		return e
+	}
+	data := rdata[0:rn]
+
+	//fmt.Println("rn", rn, binary.BigEndian.Uint32(data[0:4]))
+	if binary.BigEndian.Uint32(data[0:4]) != uint32(rn) - 4 {
+		return nil
+	}
+	// parse block
+	tarblk, _, e3 := blocks.ParseBlock(data[4:], 0)
+	if e3 != nil {
+		return e3
+	}
+	if tarblk.GetHeight() != target_height {
+		return nil
+	}
+	// insert block
+	tarblk.SetOriginMark("discover")
+	e4 := h.blockchain.InsertBlock(tarblk)
+	if e4 != nil {
+		return e4
+	}
+	// ok
+	fmt.Printf("sync a block height %d form %s success!\n", target_height, ws_url)
+
+	return nil
+}
+
+// download block data form ws api
 func (h *Backend) DownloadBlocksDataFromWebSocketApi(ws_url string, start_height uint64) (uint64, error) {
 
 	// websocket
-	// ws_url = "ws://127.0.0.1:3338/websocket"
+	// ws_url = "ws://127.0.0.1:3338/ws/download"
 	wsConn, e2 := websocket.Dial(ws_url, "ws", "http://127.0.0.1/")
 	if e2 != nil {
 		fmt.Println(e2)
