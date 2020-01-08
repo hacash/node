@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/hacash/core/interfaces"
+	"sync"
+	"time"
 )
 
 const (
@@ -23,6 +25,10 @@ const (
 	MsgTypeTxDatas        uint16 = 10
 )
 
+
+var syncActiveTime *time.Time = nil
+var syncActiveMutex sync.Mutex
+
 func msgParseSendRequestBlocks(peer interfaces.MsgPeer, startheigit uint64) {
 	fmt.Print("sync blocks: ", startheigit, "... ")
 	startheight := make([]byte, 8)
@@ -31,6 +37,17 @@ func msgParseSendRequestBlocks(peer interfaces.MsgPeer, startheigit uint64) {
 }
 
 func msgParseSendRequestBlockHashList(peer interfaces.MsgPeer, reqnum uint8, startheigit uint64) {
+	syncActiveMutex.Lock()
+	defer syncActiveMutex.Unlock()
+	timenow := time.Now()
+	if syncActiveTime != nil {
+		if syncActiveTime.Add( time.Minute * 3 ).After( timenow ) {
+			return //
+		}
+	}
+	syncActiveTime = &timenow
+
+	// send msg
 	buf := make([]byte, 1+8)
 	buf[0] = reqnum
 	binary.BigEndian.PutUint64(buf[1:], startheigit)

@@ -33,7 +33,7 @@ func (p2p *P2PManager) AddPeerToTargetGroup(group *PeerGroup, peer *Peer) error 
 	}
 	p2p.lookupPeers.Remove(peer)
 	if p2p.customerDataHandler != nil {
-		p2p.customerDataHandler.OnConnected(p2p.peerManager, peer)
+		go p2p.customerDataHandler.OnConnected(p2p.peerManager, peer)
 	}
 	return nil
 

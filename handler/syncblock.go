@@ -5,7 +5,12 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/hacash/core/interfaces"
+	"sync"
 )
+
+
+var sendBlockHashListMutex sync.Mutex
+
 
 func SendBlockHashList(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
 	if len(msgbody) != 1+8 {
@@ -15,6 +20,10 @@ func SendBlockHashList(blockchain interfaces.BlockChain, peer interfaces.MsgPeer
 	if reqnum > 80 {
 		reqnum = 80 // max len 80
 	}
+
+	sendBlockHashListMutex.Lock()
+	defer sendBlockHashListMutex.Unlock()
+
 	reqlastheight := binary.BigEndian.Uint64(msgbody[1:])
 	mylastblk, err := blockchain.State().ReadLastestBlockHeadAndMeta()
 	if err != nil {

@@ -65,8 +65,18 @@ func (p2p *P2PManager) loop() {
 		case <-dropNotReplyPublicTiker.C:
 			go func() {
 				p2p.changeStatusLock.Lock()
-				tnow := time.Now()
+				peers := make([]*Peer, 0, len(p2p.waitToReplyIsPublicPeer))
+				ress := make([]*struct {
+					curt time.Time
+					code uint32
+				}, 0, len(p2p.waitToReplyIsPublicPeer))
 				for peer, res := range p2p.waitToReplyIsPublicPeer {
+					peers = append(peers, peer)
+					ress  = append(ress,  &res)
+				}
+				tnow := time.Now()
+				for i:=0; i<len(peers); i++ {
+					peer, res := peers[i], ress[i]
 					if res.curt.Add(time.Second * 5).Before(tnow) {
 						delete(p2p.waitToReplyIsPublicPeer, peer)
 						if peer.publicIPv4 == nil {

@@ -6,7 +6,12 @@ import (
 	"fmt"
 	"github.com/hacash/core/blocks"
 	"github.com/hacash/core/interfaces"
+	"sync"
 )
+
+
+var sendBlockDataMutex sync.Mutex
+
 
 func GetBlocksData(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
 	if len(msgbody) < 3*8 {
@@ -57,8 +62,10 @@ func GetBlocksData(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, ms
 }
 
 func SendBlocksData(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
+	sendBlockDataMutex.Lock()
+	defer sendBlockDataMutex.Unlock()
 
-	//fmt.Println("SendBlocksData", msgbody)
+	fmt.Println("SendBlocksData", msgbody)
 
 	if len(msgbody) != 8 {
 		return
@@ -73,16 +80,26 @@ func SendBlocksData(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, m
 	endHeight := uint64(0)
 	// read block data
 	readatas := bytes.NewBuffer(bytes.Repeat([]byte{0}, 8*3))
-	maxsendsize := int(1024 * 512)
+	maxsendblknum := int(1000)
+	maxsendsize := int(1024 * 1024 * 8)
 	totalsize := 0
+	totalblknum := 0
 	for curhei := startHeight; curhei <= lastestHeight; curhei++ {
+		//fmt.Println("curhei", curhei)
 		_, oneblkbts, err := blockstore.ReadBlockBytesByHeight(curhei, 0)
+		//fmt.Println("curhei", curhei, "ReadBlockBytesByHeight")
 		if err != nil {
+			fmt.Println("P2P Message SendBlocksData ReadBlockBytesByHeight Error:", err.Error())
 			return
 		}
+		if oneblkbts == nil {
+			endHeight = curhei - 1
+			break // not find
+		}
+		totalblknum += 1
 		totalsize += len(oneblkbts)
 		readatas.Write(oneblkbts)
-		if totalsize >= maxsendsize || curhei == lastestHeight {
+		if curhei == lastestHeight || totalblknum >= maxsendblknum || totalsize >= maxsendsize {
 			endHeight = curhei
 			break //
 		}

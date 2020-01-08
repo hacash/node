@@ -4,10 +4,18 @@ import (
 	"bytes"
 	"github.com/hacash/core/interfaces"
 	"github.com/hacash/core/transactions"
+	"sync"
 	"time"
 )
 
+
+
+var sendTxDatasMutex sync.Mutex
+
+
 func GetRequestTxDatas(txpool interfaces.TxPool, peer interfaces.MsgPeer) {
+	sendTxDatasMutex.Lock()
+	defer sendTxDatasMutex.Unlock()
 
 	txs := txpool.CopyTxsOrderByFeePurity(5, 0, 1024*1024*50)
 
