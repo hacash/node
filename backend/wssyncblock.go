@@ -33,16 +33,25 @@ func (h *Backend) SyncBlockFromWebSocketApi(ws_url string) (error) {
 	go wsConn.Write([]byte("syncblock " + strconv.FormatUint(target_height, 10)))
 
 	rdata := make([]byte, mint.SingleBlockMaxSize * 3 / 2)
+	databuf := bytes.NewBuffer([]byte{})
+
+	READBUFSEG:
 
 	rn, e := wsConn.Read(rdata)
 	if e != nil {
 		return e
 	}
 	data := rdata[0:rn]
-
+	databuf.Write( data )
+	data = databuf.Bytes()
+	tarblkdtlen := binary.BigEndian.Uint32(data[0:4])
+	realblkdtlen := uint32(len(data)) - 4
+	if len(data) < 4 || realblkdtlen < tarblkdtlen  {
+		goto READBUFSEG
+	}
 	//fmt.Println("rn", rn, binary.BigEndian.Uint32(data[0:4]))
-	if binary.BigEndian.Uint32(data[0:4]) != uint32(rn) - 4 {
-		return nil
+	if tarblkdtlen != realblkdtlen {
+		return fmt.Errorf("block data length need %d but got %d.", tarblkdtlen, realblkdtlen)
 	}
 	// parse block
 	tarblk, _, e3 := blocks.ParseBlock(data[4:], 0)
@@ -50,7 +59,7 @@ func (h *Backend) SyncBlockFromWebSocketApi(ws_url string) (error) {
 		return e3
 	}
 	if tarblk.GetHeight() != target_height {
-		return nil
+		return fmt.Errorf("target block height must %d but got %d.", target_height, tarblk.GetHeight())
 	}
 	// insert block
 	tarblk.SetOriginMark("discover")
