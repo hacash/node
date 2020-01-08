@@ -44,6 +44,9 @@ func (h *Backend) SyncBlockFromWebSocketApi(ws_url string) (error) {
 	data := rdata[0:rn]
 	databuf.Write( data )
 	data = databuf.Bytes()
+	if string(data) == "notyet" {
+		return nil // that block not ok
+	}
 	tarblkdtlen := binary.BigEndian.Uint32(data[0:4])
 	realblkdtlen := uint32(len(data)) - 4
 	if len(data) < 4 || realblkdtlen < tarblkdtlen  {
