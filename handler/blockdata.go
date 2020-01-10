@@ -65,8 +65,7 @@ func SendBlocksData(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, m
 	sendBlockDataMutex.Lock()
 	defer sendBlockDataMutex.Unlock()
 
-	fmt.Println("SendBlocksData", msgbody)
-
+	//fmt.Println("SendBlocksData", msgbody)
 	if len(msgbody) != 8 {
 		return
 	}

@@ -3,7 +3,6 @@ package p2p
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"github.com/hacash/chain/mapset"
 	"github.com/hacash/core/interfaces"
@@ -273,7 +272,7 @@ func (pm *PeerManager) BroadcastFindNewNodeMsgToUnawarePublicPeersByBytes(peerId
 		p := i.(*Peer)
 		if bytes.Compare(p.ID, peerId) != 0 && !p.knownPeerIds.Contains(pidstr) {
 			p.AddKnownPeerId(peerId)
-			fmt.Println("p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())  to  ", hex.EncodeToString(peerId), p.Name)
+			//fmt.Println("p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())  to  ", hex.EncodeToString(peerId), p.Name)
 			p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())
 		}
 		return false
@@ -283,7 +282,7 @@ func (pm *PeerManager) BroadcastFindNewNodeMsgToUnawarePublicPeersByBytes(peerId
 		p := i.(*Peer)
 		if bytes.Compare(p.ID, peerId) != 0 && !p.knownPeerIds.Contains(pidstr) {
 			p.AddKnownPeerId(peerId)
-			fmt.Println("p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())  to  ", hex.EncodeToString(peerId), p.Name)
+			//fmt.Println("p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())  to  ", hex.EncodeToString(peerId), p.Name)
 			p.SendMsg(TCPMsgTypeDiscoverPublicPeerJoin, data.Bytes())
 		}
 		return false
