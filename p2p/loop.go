@@ -52,7 +52,7 @@ func (p2p *P2PManager) loop() {
 							go func() {
 								connerr := p2p.TryConnectToPeer(nil, addr)
 								if connerr == nil { // reput in
-									p2p.AddOldPublicPeerAddrByBytes(ipports)
+									// do not add // p2p.AddOldPublicPeerAddrByBytes(ipports)
 								}
 							}()
 						}
@@ -72,10 +72,10 @@ func (p2p *P2PManager) loop() {
 				}, 0, len(p2p.waitToReplyIsPublicPeer))
 				for peer, res := range p2p.waitToReplyIsPublicPeer {
 					peers = append(peers, peer)
-					ress  = append(ress,  &res)
+					ress = append(ress, &res)
 				}
 				tnow := time.Now()
-				for i:=0; i<len(peers); i++ {
+				for i := 0; i < len(peers); i++ {
 					peer, res := peers[i], ress[i]
 					if res.curt.Add(time.Second * 5).Before(tnow) {
 						delete(p2p.waitToReplyIsPublicPeer, peer)
