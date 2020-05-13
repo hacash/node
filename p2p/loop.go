@@ -52,7 +52,7 @@ func (p2p *P2PManager) loop() {
 							go func() {
 								connerr := p2p.TryConnectToPeer(nil, addr)
 								if connerr == nil { // reput in
-									// do not add // p2p.AddOldPublicPeerAddrByBytes(ipports)
+									// do not add back // p2p.AddOldPublicPeerAddrByBytes(ipports)
 								}
 							}()
 						}
