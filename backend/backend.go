@@ -5,6 +5,7 @@ import (
 	"github.com/hacash/core/interfaces"
 	"github.com/hacash/mint/blockchain"
 	"github.com/hacash/node/p2p"
+	"os"
 	"strings"
 	"sync"
 )
@@ -61,6 +62,13 @@ func NewBackend(config *BackendConfig) (*Backend, error) {
 
 // Start
 func (hn *Backend) Start() {
+
+	if hn.blockchain != nil {
+		hn.blockchain.Start()
+	} else {
+		fmt.Println(fmt.Errorf("[Backend] blockchain is nil."))
+		os.Exit(0)
+	}
 
 	hn.p2p.Start()
 
