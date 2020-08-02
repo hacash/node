@@ -54,6 +54,7 @@ func (p2p *P2PManager) handleNewConn(conn net.Conn, isConnectToPublic bool) {
 		if p2p.lookupPeers.Cardinality() >= p2p.config.lookupConnectMaxLen {
 			peer.SendMsg(TCPMsgTypeConnectRefuse, nil)
 			peer.Close()
+			return
 		}
 
 	}
@@ -140,7 +141,11 @@ func (p2p *P2PManager) handleNewConn(conn net.Conn, isConnectToPublic bool) {
 			if peer.isPermitCompleteNode {
 				p2p.AddOldPublicPeerAddr(peer.publicIPv4, peer.tcpListenPort) // add addr back
 			}
-			fmt.Println("[Peer] Disconnected @public peer name:", peer.Name, "addr:", peer.TcpConn.RemoteAddr().String())
+			addr := ""
+			if peer.TcpConn != nil {
+				addr = peer.TcpConn.RemoteAddr().String()
+			}
+			fmt.Println("[Peer] Disconnected @public peer name:", peer.Name, "addr:", addr)
 		} else {
 			fmt.Println("[Peer] Disconnected peer:", peer.Name)
 		}

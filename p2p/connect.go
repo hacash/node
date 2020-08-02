@@ -31,7 +31,7 @@ func (p2p *P2PManager) TryConnectToPeer(local_addr *net.TCPAddr, target_addr *ne
 		//local_addr.IP = net.IPv4zero
 	}
 	conn, err := net.DialTCP("tcp", local_addr, target_addr)
-	if err != nil {
+	if err != nil || conn == nil {
 		fmt.Println("TryConnectToNode error", err)
 		//os.Exit(1)
 		return err
