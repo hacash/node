@@ -80,10 +80,12 @@ func (p2p *P2PManager) handleTCPMessage(peer *Peer, msgty uint16, msgbody []byte
 		// check have
 		havp := p2p.GetPeerByID(peerID)
 		if havp != nil {
-			// already have id
-			peer.SendMsg(TCPMsgTypeConnectRefuse, nil)
+			// already have id // 断开以前的连接，使用最新的连接
+			p2p.peerManager.DropPeer(peer)
+			havp.Close()
+			/*peer.SendMsg(TCPMsgTypeConnectRefuse, nil)
 			peer.Close()
-			return
+			return*/
 		}
 		peer.ID = peerID
 		peer.AddKnownPeerId(peer.ID)

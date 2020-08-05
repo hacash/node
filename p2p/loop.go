@@ -42,7 +42,8 @@ func (p2p *P2PManager) loop() {
 					if ipport == nil && publicconnCount == 0 {
 						ipport = p2p.recordStaticPublicPeerTCPAddrs.Pop()
 						if ipport != nil {
-							p2p.recordStaticPublicPeerTCPAddrs.Add(ipport) // reput in
+							p2p.recordStaticPublicPeerTCPAddrs.Add(ipport)           // reput in
+							p2p.AddOldPublicPeerAddrByBytes([]byte(ipport.(string))) //
 						}
 					}
 					if ipport != nil {
