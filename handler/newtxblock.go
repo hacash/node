@@ -41,15 +41,14 @@ func GetBlockDiscover(p2p *p2p.P2PManager, blockchain interfaces.BlockChain, pee
 	if block.GetHeight() > mylastblockheight+1 {
 		fmt.Printf("need height %d but got %d, sync the new blocks ...\n", mylastblockheight+1, block.GetHeight())
 		// check hash fork
-		msgParseSendRequestBlockHashList(peer, 4, mylastblockheight)
+		msgParseSendRequestBlockHashList(peer, 8, mylastblockheight)
 		return
 	} else if block.GetHeight() < mylastblockheight+1 {
 		fmt.Printf("need height %d but got %d, ignore.\n", mylastblockheight+1, block.GetHeight())
 		return // error block height
 	}
 	// do insert
-	block.SetOriginMark("discover")
-	err := blockchain.InsertBlock(block)
+	err := blockchain.InsertBlock(block, "discover")
 	if err == nil {
 		fmt.Printf("ok.\n")
 	} else {

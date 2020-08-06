@@ -13,8 +13,8 @@ const (
 
 	TCPMsgTypeConnectRefuse uint16 = 5
 
-	TCPMsgTypeGetPublicConnectedPeerAddrs uint16 = 6
-	TCPMsgTypePublicConnectedPeerAddrs    uint16 = 7
+	TCPMsgTypeGetPublicConnectedPeerAddrs uint16 = 6 // 请求公网节点数据
+	TCPMsgTypePublicConnectedPeerAddrs    uint16 = 7 // 收到公网节点数据
 
 	TCPMsgTypeReplyPublic  uint16 = 8 // yes im public ip
 	TCPMsgTypeTellPublicIP uint16 = 9 // tell me is public

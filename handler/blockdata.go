@@ -9,9 +9,7 @@ import (
 	"sync"
 )
 
-
 var sendBlockDataMutex sync.Mutex
-
 
 func GetBlocksData(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
 	if len(msgbody) < 3*8 {
@@ -40,7 +38,7 @@ func GetBlocksData(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, ms
 		}
 		seek = sk
 		// append
-		insert_error := blockchain.InsertBlock(oneblock)
+		insert_error := blockchain.InsertBlock(oneblock, "sync")
 		if insert_error != nil {
 			fmt.Println("[Error] GetBlocksData to InsertBlock:", insert_error)
 			return

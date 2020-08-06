@@ -12,7 +12,7 @@ import (
 )
 
 // download block data form ws api
-func (h *Backend) SyncBlockFromWebSocketApi(ws_url string) (error) {
+func (h *Backend) SyncBlockFromWebSocketApi(ws_url string) error {
 
 	// websocket
 	// ws_url = "ws://127.0.0.1:3338/ws/sync"
@@ -32,24 +32,24 @@ func (h *Backend) SyncBlockFromWebSocketApi(ws_url string) (error) {
 
 	go wsConn.Write([]byte("syncblock " + strconv.FormatUint(target_height, 10)))
 
-	rdata := make([]byte, mint.SingleBlockMaxSize * 3 / 2)
+	rdata := make([]byte, mint.SingleBlockMaxSize*3/2)
 	databuf := bytes.NewBuffer([]byte{})
 
-	READBUFSEG:
+READBUFSEG:
 
 	rn, e := wsConn.Read(rdata)
 	if e != nil {
 		return e
 	}
 	data := rdata[0:rn]
-	databuf.Write( data )
+	databuf.Write(data)
 	data = databuf.Bytes()
 	if string(data) == "notyet" {
 		return nil // that block not ok
 	}
 	tarblkdtlen := binary.BigEndian.Uint32(data[0:4])
 	realblkdtlen := uint32(len(data)) - 4
-	if len(data) < 4 || realblkdtlen < tarblkdtlen  {
+	if len(data) < 4 || realblkdtlen < tarblkdtlen {
 		goto READBUFSEG
 	}
 	//fmt.Println("rn", rn, binary.BigEndian.Uint32(data[0:4]))
@@ -65,8 +65,7 @@ func (h *Backend) SyncBlockFromWebSocketApi(ws_url string) (error) {
 		return fmt.Errorf("target block height must %d but got %d.", target_height, tarblk.GetHeight())
 	}
 	// insert block
-	tarblk.SetOriginMark("discover")
-	e4 := h.blockchain.InsertBlock(tarblk)
+	e4 := h.blockchain.InsertBlock(tarblk, "discover")
 	if e4 != nil {
 		return e4
 	}
@@ -157,7 +156,7 @@ func newBlocksDataArrive(blockchain interfaces.BlockChain, datas []byte) (uint64
 		//fmt.Println(newblock.GetHeight())
 		seek = sk
 		// do store
-		err := blockchain.InsertBlock(newblock)
+		err := blockchain.InsertBlock(newblock, "sync")
 		if err != nil {
 			return 0, err
 		}

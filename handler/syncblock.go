@@ -8,9 +8,7 @@ import (
 	"sync"
 )
 
-
 var sendBlockHashListMutex sync.Mutex
-
 
 func SendBlockHashList(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
 	if len(msgbody) != 1+8 {
@@ -115,7 +113,7 @@ func GetBlockHashList(blockchain interfaces.BlockChain, peer interfaces.MsgPeer,
 
 	// not find any equal hash
 	// request more hash list  len = 80
-	if hashnum == 4 && lastestHeight > 80 {
+	if hashnum < 80 && lastestHeight > 80 {
 		msgParseSendRequestBlockHashList(peer, 80, mylastblk.GetHeight())
 	}
 }

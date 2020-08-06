@@ -6,12 +6,19 @@ func (p2p *P2PManager) loop() {
 
 	dropUnHandShakeTiker := time.NewTicker(time.Second * 13)
 	dropNotReplyPublicTiker := time.NewTicker(time.Second * 5)
-	reconnectSomePublicPeerTiker := time.NewTicker(time.Second * 21)
-	getAddrsFromPublicPeersTiker := time.NewTicker(time.Minute * 23)
+	reconnectSomePublicPeerTiker := time.NewTicker(time.Minute * 7)
+	getAddrsFromPublicPeersTiker := time.NewTicker(time.Minute * 21)
+	removeKnowPeersTiker := time.NewTicker(time.Minute * 3)
 
 	for {
 
 		select {
+
+		case <-removeKnowPeersTiker.C:
+			go func() {
+				// 3分钟删掉一个已知节点，最多60个3小时全部删完
+				p2p.peerManager.knownPeerIds.Pop()
+			}()
 
 		case <-getAddrsFromPublicPeersTiker.C:
 			go func() {
@@ -53,7 +60,7 @@ func (p2p *P2PManager) loop() {
 							go func() {
 								connerr := p2p.TryConnectToPeer(nil, addr)
 								if connerr == nil { // reput in
-									// do not add back // p2p.AddOldPublicPeerAddrByBytes(ipports)
+									p2p.AddOldPublicPeerAddrByBytes(ipports)
 								}
 							}()
 						}

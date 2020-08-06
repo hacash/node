@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"encoding/binary"
+	"fmt"
 	"math/rand"
 	"net"
 	"strings"
@@ -81,7 +82,8 @@ func (p2p *P2PManager) handleTCPMessage(peer *Peer, msgty uint16, msgbody []byte
 		havp := p2p.GetPeerByID(peerID)
 		if havp != nil {
 			// already have id // 断开以前的连接，使用最新的连接
-			p2p.peerManager.DropPeer(peer)
+			fmt.Printf("[Peer] Have connected peer %s drop it\n", havp.Name)
+			p2p.peerManager.DropPeer(havp)
 			havp.Close()
 			/*peer.SendMsg(TCPMsgTypeConnectRefuse, nil)
 			peer.Close()

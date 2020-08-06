@@ -69,11 +69,12 @@ func NewP2PManagerConfig(cnffile *sys.Inicnf) *P2PManagerConfig {
 	for _, one := range boot_nodes {
 		if tcp, err := net.ResolveTCPAddr("tcp", one); err == nil {
 			cnf.StaticHnodeAddrs = append(cnf.StaticHnodeAddrs, tcp)
-		}else{
+		} else {
 			fmt.Println("[P2P Config Error]", err.Error())
 			os.Exit(0)
 		}
 	}
+	//fmt.Println(cnf.StaticHnodeAddrs)
 	// ok
 	return cnf
 }

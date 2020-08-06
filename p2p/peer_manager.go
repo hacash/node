@@ -216,7 +216,7 @@ func (pm *PeerManager) GetPeerByID(pid []byte) *Peer {
 
 func (pm *PeerManager) AddKnownPeerId(pid []byte) {
 	pm.knownPeerIds.Add(string(pid))
-	if pm.knownPeerIds.Cardinality() > 200 {
+	if pm.knownPeerIds.Cardinality() > 60 {
 		pm.knownPeerIds.Pop() // remove one
 	}
 }

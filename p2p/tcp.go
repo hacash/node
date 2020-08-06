@@ -52,6 +52,7 @@ func (p2p *P2PManager) handleNewConn(conn net.Conn, isConnectToPublic bool) {
 		//
 	} else {
 		if p2p.lookupPeers.Cardinality() >= p2p.config.lookupConnectMaxLen {
+			fmt.Printf("[Peer] o2p.lookupPeers.Cardinality is overflow %d anc close peer\n", p2p.config.lookupConnectMaxLen)
 			peer.SendMsg(TCPMsgTypeConnectRefuse, nil)
 			peer.Close()
 			return

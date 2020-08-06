@@ -93,7 +93,7 @@ func (p *Peer) ParseRemotePublicTCPAddress() []byte {
 
 func (p *Peer) AddKnownPeerId(pid []byte) {
 	p.knownPeerIds.Add(string(pid))
-	if p.knownPeerIds.Cardinality() > 200 {
+	if p.knownPeerIds.Cardinality() > 60 {
 		p.knownPeerIds.Pop() // remove one
 	}
 }
@@ -109,7 +109,7 @@ func (p *Peer) AddKnowledge(KnowledgeKey string, KnowledgeValue string) bool {
 		knval = actknow
 	}
 	knval.Add(KnowledgeValue)
-	if knval.Cardinality() > 255 { // max Knowledge of one key
+	if knval.Cardinality() > 200 { // max Knowledge of one key
 		knval.Pop() // remove one
 	}
 	return true
