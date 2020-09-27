@@ -19,13 +19,13 @@ type HandShakeStatusData struct {
 	GenesisBlockHash fields.Hash
 
 	// version
-	BlockVersion    fields.VarInt1 // uint8
-	TransactionType fields.VarInt1 // uint8
-	ActionKind      fields.VarInt2 // uint16
-	RepairVersion   fields.VarInt2 // uint16
+	BlockVersion    fields.VarUint1 // uint8
+	TransactionType fields.VarUint1 // uint8
+	ActionKind      fields.VarUint2 // uint16
+	RepairVersion   fields.VarUint2 // uint16
 
 	// status
-	LastestBlockHeight fields.VarInt8 // uint64
+	LastestBlockHeight fields.VarUint8 // uint64
 	LastesBlockHash    fields.Hash
 }
 
@@ -78,7 +78,7 @@ func SendStatusToPeer(blockchain interfaces.BlockChain, peer interfaces.MsgPeer)
 		blocks.TransactionType,
 		blocks.ActionKind,
 		blocks.RepairVersion,
-		fields.VarInt8(lastblock.GetHeight()),
+		fields.VarUint8(lastblock.GetHeight()),
 		lastblock.Hash(),
 	}
 
