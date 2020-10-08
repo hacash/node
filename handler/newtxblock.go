@@ -31,7 +31,7 @@ func GetBlockDiscover(p2p *p2p.P2PManager, blockchain interfaces.BlockChain, pee
 	//fmt.Println("GetBlockDiscover", 4)
 	//fmt.Println("get: MrklRoot", block.GetMrklRoot().ToHex(), hex.EncodeToString(msgbody), msgbody)
 	fmt.Printf("discover new block height: %d, txs: %d, hash: %s, time: %s, try to inserting ... ",
-		block.GetHeight(), block.GetTransactionCount()-1, block.Hash().ToHex(), time.Unix(int64(block.GetTimestamp()), 0).Format(time_format_layout))
+		block.GetHeight(), block.GetCustomerTransactionCount(), block.Hash().ToHex(), time.Unix(int64(block.GetTimestamp()), 0).Format(time_format_layout))
 	// check lastest block
 	lastest, e4 := blockchain.State().ReadLastestBlockHeadAndMeta()
 	if e4 != nil {
