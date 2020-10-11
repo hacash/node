@@ -69,7 +69,6 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 		break
 
 	case P2PMsgTypeAnswerIdKeepConnectAsPeer:
-
 		// 对方也愿意持久连接
 		if len(msgbody) != PeerIDSize+PeerNameSize {
 			break

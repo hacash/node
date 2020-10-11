@@ -11,8 +11,6 @@ import (
  * 搜寻离自己最近的节点
  */
 func (p *P2P) findNodes() {
-	p.PeerChangeMux.Lock()
-	defer p.PeerChangeMux.Unlock()
 
 	tarnodes := make([]*fdNodes, 0, 9)
 	fdndmax := 8
