@@ -41,7 +41,7 @@ func (p2p *P2PManager) handleNewConn(conn net.Conn, isConnectToPublic bool) {
 	peer.connTime = time.Now()
 
 	//RemoteAddr := conn.RemoteAddr()
-	//fmt.Println("Connect Remote Addr", RemoteAddr)
+	//fmt.Println("notifyConnect Remote Addr", RemoteAddr)
 
 	if isConnectToPublic {
 		// record public ip

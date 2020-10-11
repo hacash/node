@@ -119,10 +119,10 @@ func (pm *PeerManager) PeerLen() int {
 }
 
 // interface api
-func (pm *PeerManager) GetAllPeers() []interfaces.MsgPeer {
+func (pm *PeerManager) GetAllPeers() []interfaces.P2PMsgPeer {
 	peers := pm.publicPeerGroup.peers.ToSlice()
 	peers = append(peers, pm.interiorPeerGroup.peers.ToSlice()...)
-	allpeers := make([]interfaces.MsgPeer, 0)
+	allpeers := make([]interfaces.P2PMsgPeer, 0)
 	for _, v := range peers {
 		allpeers = append(allpeers, v.(*Peer))
 	}
@@ -130,7 +130,7 @@ func (pm *PeerManager) GetAllPeers() []interfaces.MsgPeer {
 }
 
 // interface api
-func (pm *PeerManager) FindAnyOnePeerBetterBePublic() interfaces.MsgPeer {
+func (pm *PeerManager) FindAnyOnePeerBetterBePublic() interfaces.P2PMsgPeer {
 	return pm.FindRandomOnePeerBetterBePublic()
 }
 

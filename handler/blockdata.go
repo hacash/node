@@ -11,7 +11,7 @@ import (
 
 var sendBlockDataMutex sync.Mutex
 
-func GetBlocksData(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
+func GetBlocksData(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	if len(msgbody) < 3*8 {
 		return
 	}
@@ -59,7 +59,7 @@ func GetBlocksData(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, ms
 	msgParseSendRequestBlocks(peer, endHeight+1)
 }
 
-func SendBlocksData(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
+func SendBlocksData(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	sendBlockDataMutex.Lock()
 	defer sendBlockDataMutex.Unlock()
 

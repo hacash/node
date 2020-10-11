@@ -8,12 +8,9 @@ import (
 	"time"
 )
 
-
-
 var sendTxDatasMutex sync.Mutex
 
-
-func GetRequestTxDatas(txpool interfaces.TxPool, peer interfaces.MsgPeer) {
+func GetRequestTxDatas(txpool interfaces.TxPool, peer interfaces.P2PMsgPeer) {
 	sendTxDatasMutex.Lock()
 	defer sendTxDatasMutex.Unlock()
 

@@ -136,10 +136,10 @@ func (p *Peer) SendUnawareMsg(ty uint16, msgbody []byte, KnowledgeKey string, Kn
 }
 
 // interface api
-func (p *Peer) SendDataMsg(ty uint16, msgbody []byte) {
+func (p *Peer) SendDataMsg(ty uint16, msgbody []byte) error {
 	data := make([]byte, 2)
 	binary.BigEndian.PutUint16(data, ty)
-	p.SendMsg(TCPMsgTypeData, append(data, msgbody...))
+	return p.SendMsg(TCPMsgTypeData, append(data, msgbody...))
 }
 
 func (p *Peer) SendMsg(ty uint16, msgbody []byte) error {

@@ -7,7 +7,10 @@ import (
 )
 
 // OnConnected
-func (hn *Backend) OnConnected(msghandler interfaces.MsgCommunicator, peer interfaces.MsgPeer) {
+func (hn *Backend) OnConnected(msghandler interfaces.P2PMsgCommunicator, peer interfaces.P2PMsgPeer) {
+
+	//fmt.Println("-8-8-8-8-8-8-8-8-88-************ (hn *Backend) OnConnected: ", peer.Describe())
+
 	if hn.msghandler == nil {
 		hn.msghandler = msghandler
 		// download txs from pool
@@ -21,14 +24,14 @@ func (hn *Backend) OnConnected(msghandler interfaces.MsgCommunicator, peer inter
 }
 
 // OnDisconnected
-func (hn *Backend) OnDisconnected(peer interfaces.MsgPeer) {
+func (hn *Backend) OnDisconnected(peer interfaces.P2PMsgPeer) {
 
 }
 
 // OnConnected
-func (hn *Backend) OnMsgData(msghandler interfaces.MsgCommunicator, peer interfaces.MsgPeer, msgty uint16, msgbody []byte) {
+func (hn *Backend) OnMsgData(cmtr interfaces.P2PMsgCommunicator, peer interfaces.P2PMsgPeer, msgty uint16, msgbody []byte) {
 
-	// fmt.Println("OnMsgData", peer.Describe(), msgty, msgbody)
+	//fmt.Println("OnMsgData", peer.Describe(), msgty, msgbody)
 
 	if msgty == handler.MsgTypeRequestStatus {
 		handler.SendStatusToPeer(hn.blockchain, peer)

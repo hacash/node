@@ -33,7 +33,7 @@ type P2PManager struct {
 	recordStaticPublicPeerTCPAddrs mapset.Set // static setting
 
 	// handler
-	customerDataHandler interfaces.MsgDataHandler
+	customerDataHandler interfaces.P2PMsgDataHandler
 }
 
 func NewP2PManager(cnf *P2PManagerConfig, pmcnf *PeerManagerConfig) (*P2PManager, error) {
@@ -74,7 +74,7 @@ func NewP2PManager(cnf *P2PManagerConfig, pmcnf *PeerManagerConfig) (*P2PManager
 	return p2p, nil
 }
 
-func (p2p *P2PManager) SetMsgHandler(handler interfaces.MsgDataHandler) {
+func (p2p *P2PManager) SetMsgHandler(handler interfaces.P2PMsgDataHandler) {
 	p2p.customerDataHandler = handler
 }
 

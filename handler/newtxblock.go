@@ -5,7 +5,6 @@ import (
 	"github.com/hacash/core/blocks"
 	"github.com/hacash/core/interfaces"
 	"github.com/hacash/core/transactions"
-	"github.com/hacash/node/p2p"
 	"time"
 )
 
@@ -13,10 +12,11 @@ const (
 	time_format_layout = "01/02 15:04:05"
 )
 
-func GetBlockDiscover(p2p *p2p.P2PManager, blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
+func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	//fmt.Println("GetBlockDiscover", 1)
 	block, _, e1 := blocks.ParseBlock(msgbody, 0)
 	if e1 != nil {
+		//fmt.Println(e1, msgbody)
 		return // error end
 	}
 	//fmt.Println("GetBlockDiscover", 2)
@@ -52,11 +52,12 @@ func GetBlockDiscover(p2p *p2p.P2PManager, blockchain interfaces.BlockChain, pee
 	if err == nil {
 		fmt.Printf("ok.\n")
 	} else {
-		fmt.Printf("\n\n---------------\n-- %s\n---------------\n\n", err.Error())
+		//fmt.Printf("\n\n---------------\n-- %s\n---------------\n\n", err.Error())
+		fmt.Println("\n" + err.Error())
 	}
 }
 
-func GetTransactionSubmit(p2p *p2p.P2PManager, pool interfaces.TxPool, peer interfaces.MsgPeer, msgbody []byte) {
+func GetTransactionSubmit(p2p interfaces.P2PManager, pool interfaces.TxPool, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	if pool == nil {
 		return // no pool
 	}

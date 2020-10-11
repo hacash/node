@@ -65,7 +65,7 @@ func (this *HandShakeStatusData) Parse(buf []byte, seek uint32) (uint32, error) 
 
 ////////////////////////////////////////////////////////
 
-func SendStatusToPeer(blockchain interfaces.BlockChain, peer interfaces.MsgPeer) {
+func SendStatusToPeer(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer) {
 
 	lastblock, err := blockchain.State().ReadLastestBlockHeadAndMeta()
 	if err != nil {
@@ -87,7 +87,7 @@ func SendStatusToPeer(blockchain interfaces.BlockChain, peer interfaces.MsgPeer)
 	peer.SendDataMsg(MsgTypeStatus, msgdata)
 }
 
-func GetStatus(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
+func GetStatus(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 
 	if len(msgbody) != HandShakeStatusDataSize {
 		peer.Disconnect()

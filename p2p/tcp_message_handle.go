@@ -86,7 +86,7 @@ func (p2p *P2PManager) handleTCPMessage(peer *Peer, msgty uint16, msgbody []byte
 			p2p.peerManager.DropPeer(havp)
 			havp.Close()
 			/*peer.SendMsg(TCPMsgTypeConnectRefuse, nil)
-			peer.Close()
+			peer.notifyClose()
 			return*/
 		}
 		peer.ID = peerID

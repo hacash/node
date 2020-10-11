@@ -10,7 +10,7 @@ import (
 
 var sendBlockHashListMutex sync.Mutex
 
-func SendBlockHashList(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
+func SendBlockHashList(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	if len(msgbody) != 1+8 {
 		return // error len
 	}
@@ -45,7 +45,7 @@ func SendBlockHashList(blockchain interfaces.BlockChain, peer interfaces.MsgPeer
 	peer.SendDataMsg(MsgTypeBlockHashList, resdatas.Bytes())
 }
 
-func GetBlockHashList(blockchain interfaces.BlockChain, peer interfaces.MsgPeer, msgbody []byte) {
+func GetBlockHashList(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	if len(msgbody) < 8 {
 		return // error len
 	}
