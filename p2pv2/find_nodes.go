@@ -63,7 +63,13 @@ func (p *P2P) readEffectivePublicNodesFromTcp(addr *net.TCPAddr) []*fdNodes {
 		ckpubconn.Close() // 关闭
 		return gotNodes
 	}
-	nodebts := make([]byte, int(ndn[0])*FindNodeSize) // ip + port + pid
+	ndnum := int(ndn[0])
+	if ndnum == 0 || ndnum > 200 {
+		isclosed = true
+		ckpubconn.Close() // 关闭
+		return gotNodes
+	}
+	nodebts := make([]byte, ndnum*FindNodeSize) // ip + port + pid
 	_, e3 := io.ReadFull(ckpubconn, nodebts)
 	if e3 != nil {
 		//fmt.Println(e3)
@@ -107,12 +113,22 @@ func (p *P2P) doFindNearestNode(addr *net.TCPAddr, tarpid PeerID, tarnodes *[]*f
 			return // 查找到自己，返回
 		}
 		hsp := p.getPeerByID(tarpid)
+		// 加上未连接的节点
 		if hsp == nil {
-			// 加上未连接的节点
-			*tarnodes = append(*tarnodes, &fdNodes{
-				TcpAddr: addr,
-				ID:      tarpid,
-			})
+			// 并且去重
+			ishave := false
+			for _, v := range *tarnodes {
+				if bytes.Compare(v.ID, tarpid) == 0 {
+					ishave = true
+					break
+				}
+			}
+			if !ishave {
+				*tarnodes = append(*tarnodes, &fdNodes{
+					TcpAddr: addr,
+					ID:      tarpid,
+				})
+			}
 		}
 	}
 	// 数量

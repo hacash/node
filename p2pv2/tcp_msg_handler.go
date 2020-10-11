@@ -111,8 +111,10 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 		peer.ID = peerId
 		peer.Name = strings.TrimRight(peerName, " ")
 		// 连接加入节点
+		oldPeerIsBackboneNode := false // 旧节点是否为骨干节点
 		if oldpeer, hasp := p.AllNodes[string(peerId)]; hasp {
 			// 已经存在如何处理？
+			oldPeerIsBackboneNode = oldpeer.PublicIpPort != nil
 			peer.ReplacingCopyInfo(oldpeer)
 			oldpeer.Disconnect()        // 直接断开旧的连接
 			time.Sleep(time.Second * 1) // 休眠 1 秒
@@ -132,9 +134,23 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 		p.addPeerIntoUnfamiliarTableUnsafe(peer)
 		p.PeerChangeMux.Unlock()
 
+		newPeerIsBackboneNode := false // 新节点是否为骨干节点
 		go func() {
 			// 通知正式连接上
-			defer peer.notifyConnect()
+			defer func() {
+				// 骨干节点提到节点表升级
+				p.PeerChangeMux.Lock()
+				bkbndsLess := len(p.BackboneNodeTable) < p.Config.BackboneNodeTableSizeMax
+				if newPeerIsBackboneNode && (oldPeerIsBackboneNode || bkbndsLess) {
+					if rmok, newtb := removePeerIDFromTable(p.UnfamiliarNodesTable, peer.ID); rmok {
+						p.UnfamiliarNodesTable = newtb // 移除成功
+						// 放入公网节点表 // fmt.Println("放入公网节点表")
+						p.addPeerIntoTargetTableUnsafe(&p.BackboneNodeTable, p.Config.BackboneNodeTableSizeMax, peer)
+					}
+				}
+				p.PeerChangeMux.Unlock()
+				peer.notifyConnect()
+			}()
 			// 发送判断是否为公网节点的消息
 			tcp, e0 := net.ResolveTCPAddr("tcp", conn.RemoteAddr().String())
 			if e0 != nil {
@@ -142,14 +158,29 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 			}
 			tcp.Port = int(port) // 公网监听端口
 			// 尝试连接
-			ckpubconn, e1 := net.DialTimeout("tcp", tcp.String(), time.Second*10)
+			isclosed := false
+			ckpubconn, e1 := net.DialTimeout("tcp", tcp.String(), time.Second*5)
 			if e1 != nil {
 				return
 			}
-			sendTcpMsg(ckpubconn, P2PMsgTypeRequestIDForPublicNodeCheck, nil)
+			go func() {
+				// 10 秒后关闭
+				time.Sleep(time.Second * 10)
+				if !isclosed {
+					ckpubconn.Close()
+				}
+			}()
+			e3 := sendTcpMsg(ckpubconn, P2PMsgTypeRequestIDForPublicNodeCheck, nil)
+			if e3 != nil {
+				isclosed = true
+				ckpubconn.Close()
+				return
+			}
 			checkpid := make([]byte, PeerIDSize)
 			rdn, e2 := io.ReadFull(ckpubconn, checkpid)
 			if e2 != nil {
+				isclosed = true
+				ckpubconn.Close()
 				return
 			}
 			if rdn == PeerIDSize {
@@ -157,8 +188,10 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 				if bytes.Compare(checkpid, peerId) == 0 {
 					//fmt.Println("OK PublicIpPort:", hex.EncodeToString(peerId), tcp.String())
 					peer.PublicIpPort = tcp // 写入公网节点
+					newPeerIsBackboneNode = true
 				}
 			}
+			isclosed = true
 			ckpubconn.Close()
 		}()
 

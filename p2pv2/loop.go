@@ -71,7 +71,7 @@ func (p *P2P) loop() {
 			// 寻找最近的节点
 			p.findNodes()
 			// 打印最新的连接情况
-			fmt.Printf("[P2P] connected %d public nodes, %d private nodes, %d nodes, %d temp conns.\n",
+			fmt.Printf("[P2P] connected peers: %d public, %d private, total: %d nodes, %d conns.\n",
 				len(p.BackboneNodeTable), len(p.OrdinaryNodeTable), len(p.AllNodes), len(p.TemporaryConns))
 
 		}
