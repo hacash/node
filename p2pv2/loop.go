@@ -9,9 +9,9 @@ func (p *P2P) loop() {
 
 	pingBackboneNodeTiker := time.NewTicker(time.Minute * 3)
 	checkBackboneNodeActiveTiker := time.NewTicker(time.Minute * 5)
-	findNodesTiker := time.NewTicker(time.Minute * 13)
-	reconnectBootNodesTiker := time.NewTicker(time.Minute * 99) // 一个半小时boot重连一次
-	upgradeNodeLevelTiker := time.NewTicker(time.Second * 70)   // 提升节点等级 70s
+	findNodesTiker := time.NewTicker(time.Minute * 17)
+	reconnectBootNodesTiker := time.NewTicker(time.Hour * 4)  // 4小时boot重连一次
+	upgradeNodeLevelTiker := time.NewTicker(time.Second * 70) // 提升节点等级 70s
 
 	for {
 
