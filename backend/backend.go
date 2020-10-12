@@ -27,7 +27,7 @@ type Backend struct {
 	msgFlowLock sync.Mutex
 }
 
-func NewBackend_v2(config *BackendConfig) (*Backend, error) {
+func NewBackend(config *BackendConfig) (*Backend, error) {
 
 	backend := &Backend{
 		config:                    config,
@@ -57,7 +57,7 @@ func NewBackend_v2(config *BackendConfig) (*Backend, error) {
 	return backend, nil
 }
 
-func NewBackend(config *BackendConfig) (*Backend, error) {
+func NewBackend_old(config *BackendConfig) (*Backend, error) {
 
 	backend := &Backend{
 		config:                    config,

@@ -115,7 +115,7 @@ func GetStatus(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msg
 	if isUpdate {
 		printWarning(
 			"[Warning] You must update the Hacash node software form https://hacash.org\n" +
-				"【警告】 你的节点软件版本低于全网正在使用的版本，升级 Hacash 的节点软件，可访问 https://hacash.org")
+				"【警告】 你的节点软件版本低于全网正在使用的版本，升级 Hacash 的节点软件，请访问 https://hacash.org")
 		peer.Disconnect()
 		return
 	}
