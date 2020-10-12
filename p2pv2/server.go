@@ -1,11 +1,8 @@
 package p2pv2
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"io"
-	"math/rand"
 	"net"
 )
 
