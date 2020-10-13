@@ -10,7 +10,7 @@ func (p *P2P) loop() {
 	pingBackboneNodeTiker := time.NewTicker(time.Minute * 3)
 	checkBackboneNodeActiveTiker := time.NewTicker(time.Minute * 5)
 	findNodesTiker := time.NewTicker(time.Minute * 17)
-	reconnectBootNodesTiker := time.NewTicker(time.Hour * 4)  // 4小时boot重连一次
+	reconnectBootNodesTiker := time.NewTicker(time.Hour * 6)  // 6小时boot重连一次
 	upgradeNodeLevelTiker := time.NewTicker(time.Second * 70) // 提升节点等级 70s
 
 	for {
@@ -68,8 +68,13 @@ func (p *P2P) loop() {
 			}
 
 		case <-findNodesTiker.C:
-			// 寻找最近的节点
-			p.findNodes()
+			if len(p.BackboneNodeTable) == 0 {
+				// 没有公网节点连接时，尝试连接 Static Boot Nodes
+				p.tryConnectToStaticBootNodes()
+			} else {
+				// 寻找最近的节点
+				p.findNodes()
+			}
 			// 打印最新的连接情况
 			fmt.Printf("[P2P] connected peers: %d public, %d private, total: %d nodes, %d conns.\n",
 				len(p.BackboneNodeTable), len(p.OrdinaryNodeTable), len(p.AllNodes), len(p.TemporaryConns))
