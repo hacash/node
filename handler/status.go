@@ -102,20 +102,18 @@ func GetStatus(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msg
 		return
 	}
 	// check version
-	isUpdate := blocks.BlockVersion < otherStatusObj.BlockVersion ||
-		blocks.TransactionType < otherStatusObj.TransactionType ||
-		blocks.ActionKind < otherStatusObj.ActionKind
-	if isUpdate == false && blocks.RepairVersion < otherStatusObj.RepairVersion {
-		if blocks.BlockVersion == otherStatusObj.BlockVersion &&
-			blocks.TransactionType == otherStatusObj.TransactionType &&
-			blocks.ActionKind == otherStatusObj.ActionKind {
-			isUpdate = true // update
-		}
+	var isUpdate = false
+	if blocks.BlockVersion < otherStatusObj.BlockVersion || blocks.TransactionType < otherStatusObj.TransactionType || blocks.ActionKind < otherStatusObj.ActionKind {
+		isUpdate = true // update
+	} else if blocks.BlockVersion == otherStatusObj.BlockVersion && blocks.TransactionType == otherStatusObj.TransactionType && blocks.ActionKind == otherStatusObj.ActionKind && blocks.RepairVersion < otherStatusObj.RepairVersion {
+		isUpdate = true // update
 	}
 	if isUpdate {
 		printWarning(
 			"[Warning] You must update the Hacash node software form https://hacash.org\n" +
-				"【警告】 你的节点软件版本低于全网正在使用的版本，升级 Hacash 的节点软件，请访问 https://hacash.org")
+				"          If an error is reported after upgrading the new version, please try to delete all block data and resynchronize\n" +
+				"【警告】 你的节点软件版本低于全网正在使用的版本，升级 Hacash 的节点软件，请访问 https://hacash.org\n" +
+				"        如果升级新版本之后运行报错，请尝试删除所有区块数据后重新同步")
 		peer.Disconnect()
 		return
 	}
