@@ -10,8 +10,8 @@ func (p *P2P) loop() {
 	pingAllNodesTiker := time.NewTicker(time.Minute * 3)
 	checkNodesActiveTiker := time.NewTicker(time.Minute * 5)
 	findNodesTiker := time.NewTicker(time.Minute * 17)
-	reconnectBootNodesTiker := time.NewTicker(time.Hour * 6)  // 6小时boot重连一次
-	upgradeNodeLevelTiker := time.NewTicker(time.Second * 70) // 提升节点等级 70s
+	forceReconnectBootNodesTiker := time.NewTicker(time.Hour * 6) // 6小时boot重连一次
+	upgradeNodeLevelTiker := time.NewTicker(time.Second * 70)     // 提升节点等级 70s
 
 	for {
 
@@ -38,7 +38,7 @@ func (p *P2P) loop() {
 			p.PeerChangeMux.Unlock()
 			break
 
-		case <-reconnectBootNodesTiker.C:
+		case <-forceReconnectBootNodesTiker.C:
 			// 尝试重连静态节点
 			p.tryConnectToStaticBootNodes()
 			break
