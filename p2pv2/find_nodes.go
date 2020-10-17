@@ -15,8 +15,10 @@ func (p *P2P) findNodes() {
 	tarnodes := make([]*fdNodes, 0, 9)
 	fdndmax := 8
 
+	alradySuckAddrStrs := make(map[string]bool)
+
 	// 查找
-	p.doFindNearestNode(nil, nil, &tarnodes, fdndmax)
+	p.doFindNearestPublicNodes(nil, nil, &tarnodes, fdndmax, alradySuckAddrStrs)
 
 	// 按顺序连接
 	for i := len(tarnodes) - 1; i >= 0; i-- {
@@ -103,7 +105,15 @@ func (p *P2P) readEffectivePublicNodesFromTcp(addr *net.TCPAddr) []*fdNodes {
 
 }
 
-func (p *P2P) doFindNearestNode(addr *net.TCPAddr, tarpid PeerID, tarnodes *[]*fdNodes, fdndmax int) {
+func (p *P2P) doFindNearestPublicNodes(addr *net.TCPAddr, tarpid PeerID, tarnodes *[]*fdNodes, fdndmax int, alradySuckAddrStrs map[string]bool) {
+	addrstr := addr.String()
+	if alradySuckAddrStrs[addrstr] {
+		return
+	}
+	alradySuckAddrStrs[addrstr] = true
+
+	// fmt.Println("doFindNearestPublicNodes", addrstr, tarpid)
+
 	// 判断添加
 	if addr != nil && tarpid != nil {
 		// 避免自己
@@ -155,7 +165,7 @@ func (p *P2P) doFindNearestNode(addr *net.TCPAddr, tarpid PeerID, tarnodes *[]*f
 	// 递归查找
 	for _, v := range gotNodes {
 		//fmt.Println("p.findNodes()", hex.EncodeToString(v.ID), v.TcpAddr.String())
-		p.doFindNearestNode(v.TcpAddr, v.ID, tarnodes, fdndmax)
+		p.doFindNearestPublicNodes(v.TcpAddr, v.ID, tarnodes, fdndmax, alradySuckAddrStrs)
 		// 检查数量
 		if len(*tarnodes) >= fdndmax {
 			break

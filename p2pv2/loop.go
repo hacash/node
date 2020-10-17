@@ -7,8 +7,8 @@ import (
 
 func (p *P2P) loop() {
 
-	pingBackboneNodeTiker := time.NewTicker(time.Minute * 3)
-	checkBackboneNodeActiveTiker := time.NewTicker(time.Minute * 5)
+	pingAllNodesTiker := time.NewTicker(time.Minute * 3)
+	checkNodesActiveTiker := time.NewTicker(time.Minute * 5)
 	findNodesTiker := time.NewTicker(time.Minute * 17)
 	reconnectBootNodesTiker := time.NewTicker(time.Hour * 6)  // 6小时boot重连一次
 	upgradeNodeLevelTiker := time.NewTicker(time.Second * 70) // 提升节点等级 70s
@@ -43,8 +43,9 @@ func (p *P2P) loop() {
 			p.tryConnectToStaticBootNodes()
 			break
 
-		case <-pingBackboneNodeTiker.C:
+		case <-pingAllNodesTiker.C:
 			// 给所有节点发送ping消息
+
 			ct := time.Now()
 			for _, peer := range p.AllNodes {
 				if peer != nil {
@@ -54,7 +55,7 @@ func (p *P2P) loop() {
 				}
 			}
 
-		case <-checkBackboneNodeActiveTiker.C:
+		case <-checkNodesActiveTiker.C:
 			// 检查所有节点的活跃度
 			ct := time.Now()
 			for _, peer := range p.AllNodes {

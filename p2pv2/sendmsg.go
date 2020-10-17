@@ -14,7 +14,7 @@ func sendTcpMsg(conn net.Conn, msgty uint8, body []byte) error {
 	buf.Write(body)
 	//
 	data := buf.Bytes()
-	//fmt.Println("sendTcpMsg(): ", len(data), data)
+	// fmt.Println("sendTcpMsg(): ", len(data), data)
 	_, e0 := conn.Write(data)
 	return e0
 }

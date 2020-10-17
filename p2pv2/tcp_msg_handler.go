@@ -11,7 +11,7 @@ import (
 
 func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte) {
 
-	//fmt.Println("handleConnMsg", msg)
+	// fmt.Println("handleConnMsg", msg)
 
 	ct := time.Now()
 	peer.activeTime = &ct // 活跃时间
