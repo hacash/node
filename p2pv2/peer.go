@@ -62,14 +62,14 @@ func (p *Peer) notifyConnect() {
 		pubinfo += " connect update"
 	} else {
 		pubinfo += " id:" + hex.EncodeToString(p.ID) + " connect"
+		// 外部消息
+		if p.msghandler != nil {
+			p.msghandler.OnConnected(p.communicator, p)
+		}
 	}
 	// 打印信息
 	fmt.Println("[Peer] " + p.Name + pubinfo + ".")
 	p.Replacing = false // reset
-	// 外部消息
-	if p.msghandler != nil {
-		p.msghandler.OnConnected(p.communicator, p)
-	}
 }
 
 func (p *Peer) notifyClose() {

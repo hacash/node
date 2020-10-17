@@ -12,6 +12,9 @@ const (
 	P2PMsgTypePing                      uint8 = 3 // ping
 	P2PMsgTypePong                      uint8 = 4 // pong
 
+	// 无需回复的消息
+	P2PMsgTypeRemindMeIsPublicPeer uint8 = 151 // 对方提示我自己是公网节点
+
 	// 答复后立即断开连接的消息
 	P2PMsgTypeRequestIDForPublicNodeCheck uint8 = 201 // 对方询问我的 PeerID 用于判断是否为公网，答复后即可立即断开连接
 	P2PMsgTypeRequestNearestPublicNodes   uint8 = 202 // 对方请求公网节点列表(200以内)， 答复后可立即断开连接

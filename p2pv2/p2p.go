@@ -23,7 +23,8 @@ type P2P struct {
 	PeerChangeMux sync.Mutex
 
 	// my peer
-	peerSelf *Peer
+	peerSelf           *Peer
+	MyselfIsPublicPeer bool // 我自己是不是公网节点
 }
 
 func NewP2P(cnf *P2PConfig) *P2P {
@@ -37,6 +38,7 @@ func NewP2P(cnf *P2PConfig) *P2P {
 		TemporaryConns:       make(map[uint64]net.Conn),
 		PeerChangeMux:        sync.Mutex{},
 		msgHandler:           nil,
+		MyselfIsPublicPeer:   false,
 	}
 
 	var peerSelf = NewEmptyPeer(p2pobj, p2pobj.msgHandler)
@@ -58,5 +60,7 @@ func (p *P2P) doStart() {
 	go p.listen(p.Config.TCPListenPort)
 
 	go p.tryConnectToStaticBootNodes()
+
+	go p.continuePingToKeepTcpLinkAlive()
 
 }

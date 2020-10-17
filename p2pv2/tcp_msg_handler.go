@@ -11,7 +11,7 @@ import (
 
 func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte) {
 
-	// fmt.Println("handleConnMsg", msg)
+	// fmt.Println("- - - - p2p.handleConnMsg", conn.RemoteAddr().String(), ":", msg)
 
 	ct := time.Now()
 	peer.activeTime = &ct // 活跃时间
@@ -21,6 +21,11 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 	msgbody := msg[1:]
 
 	switch msgty {
+
+	case P2PMsgTypeRemindMeIsPublicPeer:
+		// 有人通知我是公网节点
+		p.MyselfIsPublicPeer = true
+		break
 
 	case P2PMsgTypeCustomer:
 		// 客户端消息到达
@@ -33,6 +38,7 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 			//fmt.Println("P2PMsgTypeCustomer", mty, mbody)
 			p.msgHandler.OnMsgData(p, peer, mty, mbody)
 		}
+		break
 
 	case P2PMsgTypePing:
 		// ping pong
@@ -88,6 +94,8 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 		p.PeerChangeMux.Unlock()
 		// 通知连接成功
 		peer.notifyConnect()
+		// 通知对方为公网节点
+		sendTcpMsg(conn, P2PMsgTypeRemindMeIsPublicPeer, nil)
 		// 判断是否需要执行第一次查找节点
 		if len(p.BackboneNodeTable) == 1 {
 			p.findNodes()
@@ -188,6 +196,8 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 					//fmt.Println("OK PublicIpPort:", hex.EncodeToString(peerId), tcp.String())
 					peer.PublicIpPort = tcp // 写入公网节点
 					newPeerIsBackboneNode = true
+					// 通知对方为公网节点
+					sendTcpMsg(conn, P2PMsgTypeRemindMeIsPublicPeer, nil)
 				}
 			}
 			isclosed = true

@@ -13,6 +13,7 @@ func (p *P2P) loop() {
 	forceReconnectBootNodesTiker := time.NewTicker(time.Hour * 6) // 6小时boot重连一次
 	upgradeNodeLevelTiker := time.NewTicker(time.Second * 70)     // 提升节点等级 70s
 
+	// 任务
 	for {
 
 		select {
@@ -45,7 +46,6 @@ func (p *P2P) loop() {
 
 		case <-pingAllNodesTiker.C:
 			// 给所有节点发送ping消息
-
 			ct := time.Now()
 			for _, peer := range p.AllNodes {
 				if peer != nil {
