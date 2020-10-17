@@ -42,7 +42,7 @@ func NewP2P(cnf *P2PConfig) *P2P {
 	var peerSelf = NewEmptyPeer(p2pobj, p2pobj.msgHandler)
 	peerSelf.ID = cnf.ID
 	if len(cnf.Name) == 0 {
-		cnf.Name = "hnode_" + string([]byte(hex.EncodeToString(cnf.ID))[0:10])
+		cnf.Name = "hn_" + string([]byte(hex.EncodeToString(cnf.ID))[0:10])
 	}
 	peerSelf.Name = cnf.Name
 

@@ -29,7 +29,7 @@ type P2PConfig struct {
 
 func NewEmptyP2PConfig() *P2PConfig {
 	return &P2PConfig{
-		Name:                       "hacash_node",
+		Name:                       "",
 		ID:                         nil,
 		TCPListenPort:              3331,
 		BackboneNodeTableSizeMax:   8,
