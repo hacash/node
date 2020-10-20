@@ -21,7 +21,6 @@ func (p *P2P) handleNewConn(conn net.Conn, createPeer *Peer) {
 	createPeer.conn = conn
 
 	// 是否已经握手通过
-	var handshakeHasPassed = false
 	//fmt.Println("hacashnodep2phandshake")
 
 	for {
@@ -36,20 +35,11 @@ func (p *P2P) handleNewConn(conn net.Conn, createPeer *Peer) {
 		}
 		//fmt.Println("next")
 		length := binary.BigEndian.Uint32(lengthBuf)
-		// 检查握手信号
-		if !handshakeHasPassed {
-			//fmt.Println(connid, "do handshake")
-			if length != P2PHandshakeSignal {
-				//fmt.Println(connid, "handshake error")
-				break // 首次握手信号检查失败
-			}
-			//fmt.Println(connid, "handshake success")
-			handshakeHasPassed = true
-			// 握手成功
-			continue
-		}
 		if length == 0 {
 			break // 错误
+		}
+		if length > P2PMsgDataMaxSize {
+			break // 最大消息长度 50 MB
 		}
 		// 读取消息内容
 		bodyBuf := make([]byte, length)

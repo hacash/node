@@ -1,7 +1,8 @@
 package p2pv2
 
 const (
-	P2PHandshakeSignal uint32 = 3418609527 // 固定不变的信号值
+	P2PHandshakeSignal uint32 = 3418609527               // 固定不变的信号值
+	P2PMsgDataMaxSize  uint32 = uint32(50) * 1024 * 1024 // 单条消息最大长度 50 MB
 
 	PeerNameSize int = 16
 	PeerIDSize   int = 16

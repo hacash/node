@@ -2,6 +2,8 @@ package p2pv2
 
 import (
 	"encoding/binary"
+	"fmt"
+	"io"
 	"net"
 	"time"
 )
@@ -17,14 +19,42 @@ func dialTimeoutWithHandshakeSignal(network, address string, timeout time.Durati
 		return nil, e0
 	}
 
-	// 发送握手信号
-	e1 := sendTcpMsgHandshakeSignal(conn)
+	// 执行握手
+	e1 := doTcpMsgHandshakeSignalIfErrorClose(conn)
 	if e1 != nil {
-		conn.Close()
 		return nil, e1
 	}
 
 	return conn, nil
+}
+
+/**
+ * 发送和接受握手连接
+ */
+func doTcpMsgHandshakeSignalIfErrorClose(conn net.Conn) error {
+
+	// 发送握手信号
+	e1 := sendTcpMsgHandshakeSignal(conn)
+	if e1 != nil {
+		conn.Close()
+		return e1
+	}
+
+	// 收到握手信号
+	hdsksgl := make([]byte, 4)
+	_, e2 := io.ReadFull(conn, hdsksgl)
+	if e2 != nil {
+		conn.Close()
+		return e2
+	}
+	signal := binary.BigEndian.Uint32(hdsksgl)
+	if signal != P2PHandshakeSignal {
+		conn.Close()
+		return fmt.Errorf("p2p handshake fail")
+	}
+
+	// ok
+	return nil
 }
 
 /**

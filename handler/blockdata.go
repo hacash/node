@@ -78,7 +78,7 @@ func SendBlocksData(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer
 	// read block data
 	readatas := bytes.NewBuffer(bytes.Repeat([]byte{0}, 8*3))
 	maxsendblknum := int(1000)
-	maxsendsize := int(1024 * 1024 * 8)
+	maxsendsize := int(1024 * 1024 * 8) // 最大发送不超过 8 MB
 	totalsize := 0
 	totalblknum := 0
 	for curhei := startHeight; curhei <= lastestHeight; curhei++ {
