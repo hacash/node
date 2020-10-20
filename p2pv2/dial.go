@@ -32,6 +32,7 @@ func dialTimeoutWithHandshakeSignal(network, address string, timeout time.Durati
  * 发送和接受握手连接
  */
 func doTcpMsgHandshakeSignalIfErrorClose(conn net.Conn) error {
+	//return nil
 
 	// 发送握手信号
 	e1 := sendTcpMsgHandshakeSignal(conn)
