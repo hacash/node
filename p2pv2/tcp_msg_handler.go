@@ -166,7 +166,7 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 			tcp.Port = int(port) // 公网监听端口
 			// 尝试连接
 			isclosed := false
-			ckpubconn, e1 := net.DialTimeout("tcp", tcp.String(), time.Second*5)
+			ckpubconn, e1 := dialTimeoutWithHandshakeSignal("tcp", tcp.String(), time.Second*5)
 			if e1 != nil {
 				return
 			}

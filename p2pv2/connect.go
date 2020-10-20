@@ -12,10 +12,11 @@ import (
  */
 func (p *P2P) ConnectNodeInitiative(addr *net.TCPAddr) (net.Conn, error) {
 
-	conn, e0 := net.DialTimeout("tcp", addr.String(), time.Second*5)
+	conn, e0 := dialTimeoutWithHandshakeSignal("tcp", addr.String(), time.Second*5)
 	if e0 != nil {
 		return nil, e0
 	}
+
 	// 自动为公网节点
 	peer := NewEmptyPeer(p, p.msgHandler)
 	peer.PublicIpPort = addr
@@ -29,10 +30,10 @@ func (p *P2P) ConnectNodeInitiative(addr *net.TCPAddr) (net.Conn, error) {
 	idbuf := bytes.NewBuffer(portbts)
 	idbuf.Write(p.peerSelf.ID)
 	idbuf.Write(p.peerSelf.NameBytes())
-	e1 := sendTcpMsg(conn, P2PMsgTypeReportIdKeepConnectAsPeer, idbuf.Bytes())
-	if e1 != nil {
+	e2 := sendTcpMsg(conn, P2PMsgTypeReportIdKeepConnectAsPeer, idbuf.Bytes())
+	if e2 != nil {
 		conn.Close()
-		return nil, e1
+		return nil, e2
 	}
 
 	// 成功返回

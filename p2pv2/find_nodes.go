@@ -37,7 +37,7 @@ func (p *P2P) readEffectivePublicNodesFromTcp(addr *net.TCPAddr) []*fdNodes {
 	gotNodes := make([]*fdNodes, 0)
 	// 尝试连接
 	isclosed := false
-	ckpubconn, e1 := net.DialTimeout("tcp", addr.String(), time.Second*5)
+	ckpubconn, e1 := dialTimeoutWithHandshakeSignal("tcp", addr.String(), time.Second*5)
 	if e1 != nil {
 		return gotNodes
 	}
@@ -48,7 +48,8 @@ func (p *P2P) readEffectivePublicNodesFromTcp(addr *net.TCPAddr) []*fdNodes {
 			ckpubconn.Close()
 		}
 	}()
-	e0 := sendTcpMsg(ckpubconn, P2PMsgTypeRequestNearestPublicNodes, nil) // 请求最近的公网节点
+	// 请求最近的公网节点
+	e0 := sendTcpMsg(ckpubconn, P2PMsgTypeRequestNearestPublicNodes, nil)
 	if e0 != nil {
 		//fmt.Println(e0)
 		isclosed = true

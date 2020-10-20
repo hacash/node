@@ -1,6 +1,8 @@
 package p2pv2
 
 const (
+	P2PHandshakeSignal uint32 = 3418609527 // 固定不变的信号值
+
 	PeerNameSize int = 16
 	PeerIDSize   int = 16
 )

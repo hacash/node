@@ -25,6 +25,13 @@ func (p *P2P) listen(port int) {
 			fmt.Println(err)
 			break
 		}
+		// 发送握手信号
+		e1 := sendTcpMsgHandshakeSignal(conn)
+		if e1 != nil {
+			conn.Close()
+			continue
+		}
+		// 处理消息
 		go p.handleNewConn(conn, nil)
 	}
 
