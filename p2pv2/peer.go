@@ -83,7 +83,7 @@ func (p *Peer) notifyClose() {
 	if p.ActiveOvertime {
 		pubinfo += " active overtime"
 	} else if p.FarawayClose {
-		pubinfo += " faraway"
+		pubinfo += " topology faraway"
 	}
 	fmt.Println("[Peer] " + p.Name + pubinfo + " disconnect.")
 	// 外部消息

@@ -39,7 +39,7 @@ func (p *P2P) handleNewConn(conn net.Conn, createPeer *Peer) {
 			break // 错误
 		}
 		if length > P2PMsgDataMaxSize {
-			break // 最大消息长度 50 MB
+			break // 最大消息长度 10 MB
 		}
 		// 读取消息内容
 		bodyBuf := make([]byte, length)
