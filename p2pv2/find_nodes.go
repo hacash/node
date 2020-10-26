@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net"
+	"sync/atomic"
 	"time"
 )
 
@@ -11,6 +12,10 @@ import (
  * 搜寻离自己最近的节点
  */
 func (p *P2P) findNodes() {
+	swapped := atomic.CompareAndSwapUint32(&p.isInFindingNode, 0, 1)
+	if !swapped {
+		return // 正在寻找节点间
+	}
 
 	tarnodes := make([]*fdNodes, 0, 9)
 	fdndmax := 8
@@ -23,6 +28,7 @@ func (p *P2P) findNodes() {
 	// 按顺序连接
 	for i := len(tarnodes) - 1; i >= 0; i-- {
 		node := tarnodes[i]
+		//fmt.Println(node.TcpAddr.String())
 		haspeer := p.getPeerByID(node.ID)
 		// 判断是否已经连接
 		if haspeer == nil {
@@ -30,29 +36,52 @@ func (p *P2P) findNodes() {
 		}
 	}
 
+	// 节点全部查询成功
+	atomic.CompareAndSwapUint32(&p.isInFindingNode, 1, 0)
 }
 
-func (p *P2P) readEffectivePublicNodesFromTcp(addr *net.TCPAddr) []*fdNodes {
+func (p *P2P) readEffectivePublicNodesFromTcpTimeout(addr *net.TCPAddr, waitsec int64) []*fdNodes {
+
+	//fmt.Println("readEffectivePublicNodesFromTcp", addr.String())
+	//defer func() {
+	//	fmt.Println("readEffectivePublicNodesFromTcp  return")
+	//}()
+
+	gotNodes := make([]*fdNodes, 0)
+	var retmarkch chan bool = make(chan bool, 1)
+	var timeout = time.NewTimer(time.Duration(waitsec) * time.Second)
+
+	go func() {
+		gotNodes = p.readEffectivePublicNodesFromTcpTimeoutClose(addr, waitsec)
+		retmarkch <- true
+	}()
+
+	select {
+	case <-timeout.C:
+		return gotNodes
+	case <-retmarkch:
+		return gotNodes
+	}
+
+}
+
+func (p *P2P) readEffectivePublicNodesFromTcpTimeoutClose(addr *net.TCPAddr, closesec int64) []*fdNodes {
 
 	gotNodes := make([]*fdNodes, 0)
 	// 尝试连接
-	isclosed := false
 	ckpubconn, e1 := dialTimeoutWithHandshakeSignal("tcp", addr.String(), time.Second*5)
 	if e1 != nil {
 		return gotNodes
 	}
 	go func() {
 		// 10 秒后关闭
-		time.Sleep(time.Second * 10)
-		if !isclosed {
-			ckpubconn.Close()
-		}
+		time.Sleep(time.Second * time.Duration(closesec))
+		ckpubconn.Close()
 	}()
 	// 请求最近的公网节点
 	e0 := sendTcpMsg(ckpubconn, P2PMsgTypeRequestNearestPublicNodes, nil)
 	if e0 != nil {
 		//fmt.Println(e0)
-		isclosed = true
 		ckpubconn.Close() // 关闭
 		return gotNodes
 	}
@@ -60,13 +89,11 @@ func (p *P2P) readEffectivePublicNodesFromTcp(addr *net.TCPAddr) []*fdNodes {
 	_, e2 := io.ReadFull(ckpubconn, ndn)
 	if e2 != nil {
 		//fmt.Println(e2)
-		isclosed = true
 		ckpubconn.Close() // 关闭
 		return gotNodes
 	}
 	ndnum := int(ndn[0])
 	if ndnum == 0 || ndnum > 200 {
-		isclosed = true
 		ckpubconn.Close() // 关闭
 		return gotNodes
 	}
@@ -74,11 +101,9 @@ func (p *P2P) readEffectivePublicNodesFromTcp(addr *net.TCPAddr) []*fdNodes {
 	_, e3 := io.ReadFull(ckpubconn, nodebts)
 	if e3 != nil {
 		//fmt.Println(e3)
-		isclosed = true
 		ckpubconn.Close() // 关闭
 		return gotNodes
 	}
-	isclosed = true
 	ckpubconn.Close() // 关闭
 	// 解析nodebts
 	//fmt.Println(nodebts)
@@ -108,12 +133,13 @@ func (p *P2P) readEffectivePublicNodesFromTcp(addr *net.TCPAddr) []*fdNodes {
 
 func (p *P2P) doFindNearestPublicNodes(addr *net.TCPAddr, tarpid PeerID, tarnodes *[]*fdNodes, fdndmax int, alradySuckAddrStrs map[string]bool) {
 	addrstr := addr.String()
+
 	if alradySuckAddrStrs[addrstr] {
 		return
 	}
 	alradySuckAddrStrs[addrstr] = true
 
-	// fmt.Println("doFindNearestPublicNodes", addrstr, tarpid)
+	//fmt.Println("doFindNearestPublicNodes", addrstr, tarpid)
 
 	// 判断添加
 	if addr != nil && tarpid != nil {
@@ -133,6 +159,7 @@ func (p *P2P) doFindNearestPublicNodes(addr *net.TCPAddr, tarpid PeerID, tarnode
 				}
 			}
 			if !ishave {
+				//fmt.Println("*tarnodes = append(*tarnodes, &fdNodes{", addr.String())
 				*tarnodes = append(*tarnodes, &fdNodes{
 					TcpAddr: addr,
 					ID:      tarpid,
@@ -140,6 +167,7 @@ func (p *P2P) doFindNearestPublicNodes(addr *net.TCPAddr, tarpid PeerID, tarnode
 			}
 		}
 	}
+
 	// 数量
 	if len(*tarnodes) >= fdndmax {
 		return
@@ -158,9 +186,9 @@ func (p *P2P) doFindNearestPublicNodes(addr *net.TCPAddr, tarpid PeerID, tarnode
 			}
 		}
 	} else {
-		// tcp连接读取公网节点
+		// tcp连接读取公网节点, 10 秒timeout
 		// 发送获取公网节点列表消息
-		gotNodes = p.readEffectivePublicNodesFromTcp(addr)
+		gotNodes = p.readEffectivePublicNodesFromTcpTimeout(addr, 10)
 	}
 
 	// 递归查找

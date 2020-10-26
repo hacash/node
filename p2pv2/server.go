@@ -26,7 +26,7 @@ func (p *P2P) listen(port int) {
 			break
 		}
 		// 执行握手
-		e1 := doTcpMsgHandshakeSignalIfErrorClose(conn)
+		e1 := doTcpMsgHandshakeSignalIfErrorClose(conn, 10)
 		if e1 != nil {
 			continue
 		}

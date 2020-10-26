@@ -25,6 +25,9 @@ type P2P struct {
 	// my peer
 	peerSelf           *Peer
 	MyselfIsPublicPeer bool // 我自己是不是公网节点
+
+	// 状态
+	isInFindingNode uint32
 }
 
 func NewP2P(cnf *P2PConfig) *P2P {
@@ -39,6 +42,7 @@ func NewP2P(cnf *P2PConfig) *P2P {
 		PeerChangeMux:        sync.Mutex{},
 		msgHandler:           nil,
 		MyselfIsPublicPeer:   false,
+		isInFindingNode:      0,
 	}
 
 	var peerSelf = NewEmptyPeer(p2pobj, p2pobj.msgHandler)

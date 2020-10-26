@@ -12,6 +12,11 @@ import (
  */
 func (p *P2P) ConnectNodeInitiative(addr *net.TCPAddr) (net.Conn, error) {
 
+	//fmt.Println("ConnectNodeInitiative", addr.String())
+	//defer func() {
+	//	fmt.Println("ConnectNodeInitiative return")
+	//}()
+
 	conn, e0 := dialTimeoutWithHandshakeSignal("tcp", addr.String(), time.Second*5)
 	if e0 != nil {
 		return nil, e0
