@@ -19,25 +19,30 @@ func (p *P2P) loop() {
 		select {
 
 		case <-upgradeNodeLevelTiker.C:
-			ct := time.Now()
-			// 提升节点等级
-			// 将临时区域内连接超过半小时的节点提升到公网或私网表
-			p.PeerChangeMux.Lock()
-			if len(p.UnfamiliarNodesTable) > 0 {
-				curpid := p.UnfamiliarNodesTable[0]
-				peer := p.getPeerByID(curpid)
-				if peer == nil {
-					// 删除无效的
-					p.UnfamiliarNodesTable = p.UnfamiliarNodesTable[1:]
-				} else {
-					// 检查时间, 已经连接30分钟
-					if peer.createTime.Add(time.Minute * 30).Before(ct) {
-						p.upgradeOneUnfamiliarNodeLevelUnsafe() // 提升最后节点的等级
+			if len(p.BackboneNodeTable) == 0 {
+				// 没有公网节点连接时，尝试连接 Static Boot Nodes
+				p.tryConnectToStaticBootNodes()
+			} else {
+				ct := time.Now()
+				// 提升节点等级
+				// 将临时区域内连接超过半小时的节点提升到公网或私网表
+				p.PeerChangeMux.Lock()
+				if len(p.UnfamiliarNodesTable) > 0 {
+					curpid := p.UnfamiliarNodesTable[0]
+					peer := p.getPeerByID(curpid)
+					if peer == nil {
+						// 删除无效的
+						p.UnfamiliarNodesTable = p.UnfamiliarNodesTable[1:]
+					} else {
+						// 检查时间, 已经连接30分钟
+						if peer.createTime.Add(time.Minute * 30).Before(ct) {
+							p.upgradeOneUnfamiliarNodeLevelUnsafe() // 提升最后节点的等级
+						}
 					}
 				}
+				p.PeerChangeMux.Unlock()
+				break
 			}
-			p.PeerChangeMux.Unlock()
-			break
 
 		case <-forceReconnectBootNodesTiker.C:
 			// 尝试重连静态节点
