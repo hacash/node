@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net"
+	"time"
 )
 
 func (p *P2P) listen(port int) {
@@ -25,8 +26,9 @@ func (p *P2P) listen(port int) {
 			fmt.Println(err)
 			break
 		}
+		//fmt.Println(conn.RemoteAddr())
 		// 执行握手
-		e1 := doTcpMsgHandshakeSignalIfErrorClose(conn, 10)
+		e1 := doTcpMsgHandshakeSignalIfErrorClose(conn, time.Second*10)
 		if e1 != nil {
 			continue
 		}

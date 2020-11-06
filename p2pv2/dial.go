@@ -64,6 +64,7 @@ func doTcpMsgHandshakeSignalIfErrorClose(conn net.Conn, timeout time.Duration) e
 		}
 
 		// ok
+		//fmt.Println("reterrCh <- nil")
 		reterrCh <- nil
 		return
 	}()
@@ -74,6 +75,7 @@ func doTcpMsgHandshakeSignalIfErrorClose(conn net.Conn, timeout time.Duration) e
 		conn.Close() // close time conn
 		return fmt.Errorf("sendTcpMsgHandshakeSignal timeout")
 	case err := <-reterrCh:
+		timein.Stop()
 		return err
 	}
 

@@ -17,7 +17,7 @@ func (p *P2P) ConnectNodeInitiative(addr *net.TCPAddr) (net.Conn, error) {
 	//	fmt.Println("ConnectNodeInitiative return")
 	//}()
 
-	conn, e0 := dialTimeoutWithHandshakeSignal("tcp", addr.String(), time.Second*5)
+	conn, e0 := dialTimeoutWithHandshakeSignal("tcp", addr.String(), time.Second*10)
 	if e0 != nil {
 		return nil, e0
 	}

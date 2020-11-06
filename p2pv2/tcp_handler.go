@@ -29,8 +29,8 @@ func (p *P2P) handleNewConn(conn net.Conn, createPeer *Peer) {
 		_, e0 := io.ReadFull(conn, lengthBuf)
 		//fmt.Println(lengthBuf)
 		if e0 != nil {
-			// fmt.Println("handleNewConn _, e0 := io.ReadFull(conn, lengthBuf)")
-			// fmt.Println(e0)
+			//fmt.Println("handleNewConn _, e0 := io.ReadFull(conn, lengthBuf)")
+			//fmt.Println(e0)
 			break // error
 		}
 		//fmt.Println("next")
@@ -46,8 +46,8 @@ func (p *P2P) handleNewConn(conn net.Conn, createPeer *Peer) {
 		_, e1 := io.ReadFull(conn, bodyBuf)
 		//fmt.Println(bodyBuf)
 		if e1 != nil {
-			// fmt.Println("handleNewConn _, e1 := io.ReadFull(conn, bodyBuf)")
-			// fmt.Println(e1)
+			//fmt.Println("handleNewConn _, e1 := io.ReadFull(conn, bodyBuf)")
+			//fmt.Println(e1)
 			break // error
 		}
 
