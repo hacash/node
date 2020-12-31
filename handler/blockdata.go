@@ -11,7 +11,7 @@ import (
 
 var sendBlockDataMutex sync.Mutex
 
-func GetBlocksData(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
+func GetBlocksData(cmtr interfaces.P2PMsgCommunicator, blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	if len(msgbody) < 3*8 {
 		return
 	}
@@ -56,7 +56,11 @@ func GetBlocksData(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer,
 		return
 	}
 	// req next data
-	msgParseSendRequestBlocks(peer, endHeight+1)
+	acpubpeer := cmtr.FindAnyOnePeerBetterBePublic() // 请求一个新节点
+	if acpubpeer == nil {
+		acpubpeer = peer // ac = nil
+	}
+	msgParseSendRequestBlocks(acpubpeer, endHeight+1)
 }
 
 func SendBlocksData(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {

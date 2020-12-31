@@ -29,7 +29,7 @@ var syncActiveTime *time.Time = nil
 var syncActiveMutex sync.Mutex
 
 func msgParseSendRequestBlocks(peer interfaces.P2PMsgPeer, startheigit uint64) {
-	fmt.Print("sync blocks: ", startheigit, "... ")
+	fmt.Print("sync blocks from peer "+peer.Describe()+": ", startheigit, "... ")
 	startheight := make([]byte, 8)
 	binary.BigEndian.PutUint64(startheight, startheigit)
 	peer.SendDataMsg(MsgTypeRequestBlocks, startheight)
