@@ -132,12 +132,14 @@ func (p *P2P) readEffectivePublicNodesFromTcpTimeoutClose(addr *net.TCPAddr, clo
 }
 
 func (p *P2P) doFindNearestPublicNodes(addr *net.TCPAddr, tarpid PeerID, tarnodes *[]*fdNodes, fdndmax int, alradySuckAddrStrs map[string]bool) {
-	addrstr := addr.String()
 
-	if alradySuckAddrStrs[addrstr] {
-		return
+	if addr != nil {
+		addrstr := addr.String()
+		if alradySuckAddrStrs[addrstr] {
+			return
+		}
+		alradySuckAddrStrs[addrstr] = true
 	}
-	alradySuckAddrStrs[addrstr] = true
 
 	//fmt.Println("doFindNearestPublicNodes", addrstr, tarpid)
 
