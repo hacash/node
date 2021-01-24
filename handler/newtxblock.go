@@ -42,8 +42,8 @@ func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChai
 		msgParseSendRequestBlockHashList(peer, 8, mylastblockheight)
 		return
 	} else if block.GetHeight() < mylastblockheight+1 {
-		fmt.Printf("need height %d but got %d, ignore.\n", mylastblockheight+1, block.GetHeight())
 		peer.Disconnect()
+		//fmt.Printf("need height %d but got %d, ignore.\n", mylastblockheight+1, block.GetHeight())
 		return // error block height
 	}
 	// note
