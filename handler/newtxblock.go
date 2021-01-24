@@ -30,8 +30,6 @@ func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChai
 	// insert block
 	//fmt.Println("GetBlockDiscover", 4)
 	//fmt.Println("get: MrklRoot", block.GetMrklRoot().ToHex(), hex.EncodeToString(msgbody), msgbody)
-	fmt.Printf("discover new block height: %d, txs: %d, hash: %s, time: %s, try to inserting ... ",
-		block.GetHeight(), block.GetCustomerTransactionCount(), block.Hash().ToHex(), time.Unix(int64(block.GetTimestamp()), 0).Format(time_format_layout))
 	// check lastest block
 	lastest, e4 := blockchain.State().ReadLastestBlockHeadAndMeta()
 	if e4 != nil {
@@ -45,8 +43,13 @@ func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChai
 		return
 	} else if block.GetHeight() < mylastblockheight+1 {
 		fmt.Printf("need height %d but got %d, ignore.\n", mylastblockheight+1, block.GetHeight())
+		peer.Disconnect()
 		return // error block height
 	}
+	// note
+	fmt.Printf("discover new block height: %d, txs: %d, hash: %s, time: %s, try to inserting ... ",
+		block.GetHeight(), block.GetCustomerTransactionCount(), block.Hash().ToHex(),
+		time.Unix(int64(block.GetTimestamp()), 0).Format(time_format_layout))
 	// do insert
 	err := blockchain.InsertBlock(block, "discover")
 	if err == nil {
