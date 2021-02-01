@@ -33,6 +33,10 @@ func (p *P2P) SetMsgHandler(msghdr interfaces.P2PMsgDataHandler) {
 	p.peerSelf.msghandler = msghdr
 }
 
+func (p *P2P) GetConfigOfBootNodeFastSync() bool {
+	return p.Config.BootNodeFastSync
+}
+
 /*******************************************************************************/
 
 /**

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/hacash/core/interfaces"
 	"github.com/hacash/mint/blockchain"
-	"github.com/hacash/node/p2p"
 	"github.com/hacash/node/p2pv2"
 	"os"
 	"strings"
@@ -39,40 +38,6 @@ func NewBackend(config *BackendConfig) (*Backend, error) {
 	// p2p
 	p2pcnf := p2pv2.NewP2PConfig(config.cnffile)
 	p2pmng := p2pv2.NewP2P(p2pcnf)
-	backend.p2p = p2pmng
-	p2pmng.SetMsgHandler(backend) // handle msg
-
-	// blockchain
-	bccnf := blockchain.NewBlockChainConfig(config.cnffile)
-	bc, err2 := blockchain.NewBlockChain(bccnf)
-	if err2 != nil {
-		return nil, err2
-	}
-	backend.blockchain = bc
-
-	// insert block success
-	bc.SubscribeValidatedBlockOnInsert(backend.discoverNewBlockSuccessCh)
-
-	// return
-	return backend, nil
-}
-
-func NewBackend_old(config *BackendConfig) (*Backend, error) {
-
-	backend := &Backend{
-		config:                    config,
-		msghandler:                nil,
-		addTxToPoolSuccessCh:      make(chan interfaces.Transaction, 5),
-		discoverNewBlockSuccessCh: make(chan interfaces.Block, 5),
-	}
-
-	// p2p
-	p2pcnf := p2p.NewP2PManagerConfig(config.cnffile)
-	peercnf := p2p.NewPeerManagerConfig(config.cnffile)
-	p2pmng, err := p2p.NewP2PManager(p2pcnf, peercnf)
-	if err != nil {
-		return nil, err
-	}
 	backend.p2p = p2pmng
 	p2pmng.SetMsgHandler(backend) // handle msg
 

@@ -59,7 +59,7 @@ func (hn *Backend) OnMsgData(cmtr interfaces.P2PMsgCommunicator, peer interfaces
 	}
 
 	if msgty == handler.MsgTypeBlocks {
-		handler.GetBlocksData(cmtr, hn.blockchain, peer, msgbody)
+		handler.GetBlocksData(hn.p2p, cmtr, hn.blockchain, peer, msgbody)
 		return
 	}
 

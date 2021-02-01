@@ -19,6 +19,8 @@ type P2PConfig struct {
 	StaticHnodeAddrs []*net.TCPAddr // IP:port ...
 	TCPListenPort    int
 
+	BootNodeFastSync bool
+
 	// 骨干/超级/公网 节点 连接表大小
 	BackboneNodeTableSizeMax int `json:"backbone_node_table_size_max"`
 	// 叶子/普通/私网 节点 连接表大小
@@ -32,6 +34,7 @@ func NewEmptyP2PConfig() *P2PConfig {
 		Name:                       "",
 		ID:                         nil,
 		TCPListenPort:              3331,
+		BootNodeFastSync:           false,
 		BackboneNodeTableSizeMax:   8,
 		OrdinaryNodeTableSizeMax:   32,
 		UnfamiliarNodeTableSizeMax: 128,
@@ -65,6 +68,8 @@ func NewP2PConfig(cnffile *sys.Inicnf) *P2PConfig {
 	if p2pname != "" {
 		cnf.Name = p2pname
 	}
+	snfs := ini_section_p2p.Key("boot_node_fast_sync").MustBool(false)
+	cnf.BootNodeFastSync = snfs
 	// static node url bootnodes
 	boot_nodes := cnffile.StringValueList("p2p", "boot_nodes")
 	for _, one := range boot_nodes {
