@@ -11,9 +11,9 @@ type P2P struct {
 
 	msgHandler interfaces.P2PMsgDataHandler
 
-	BackboneNodeTable    []PeerID
-	OrdinaryNodeTable    []PeerID
-	UnfamiliarNodesTable []PeerID
+	BackboneNodeTable    []PeerID // 公网节点
+	OrdinaryNodeTable    []PeerID // 私网节点
+	UnfamiliarNodesTable []PeerID // 临时节点
 
 	AllNodesLen int
 	AllNodes    sync.Map //       [string]*Peer // 全部节点池

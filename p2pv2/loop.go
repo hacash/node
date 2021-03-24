@@ -9,7 +9,7 @@ func (p *P2P) loop() {
 
 	pingAllNodesTiker := time.NewTicker(time.Minute * 3)
 	checkNodesActiveTiker := time.NewTicker(time.Minute * 5)
-	findNodesTiker := time.NewTicker(time.Minute * 17)
+	findNodesTiker := time.NewTicker(time.Minute * 37)            // 37 分钟 findnode 一次
 	forceReconnectBootNodesTiker := time.NewTicker(time.Hour * 6) // 6小时boot重连一次
 	upgradeNodeLevelTiker := time.NewTicker(time.Second * 70)     // 提升节点等级 70s
 
