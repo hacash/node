@@ -3,7 +3,6 @@ package p2pv2
 import (
 	"encoding/hex"
 	"github.com/hacash/core/interfaces"
-	"net"
 	"sync"
 )
 
@@ -16,9 +15,11 @@ type P2P struct {
 	OrdinaryNodeTable    []PeerID
 	UnfamiliarNodesTable []PeerID
 
-	AllNodes map[string]*Peer // map[PeerID] // 全部节点池
+	AllNodesLen int
+	AllNodes    sync.Map //       [string]*Peer // 全部节点池
 
-	TemporaryConns map[uint64]net.Conn // 临时连接池
+	TemporaryConnsLen int
+	TemporaryConns    sync.Map // [uint64]net.Conn // 临时连接池
 
 	PeerChangeMux sync.Mutex
 
@@ -37,8 +38,8 @@ func NewP2P(cnf *P2PConfig) *P2P {
 		BackboneNodeTable:    []PeerID{},
 		OrdinaryNodeTable:    []PeerID{},
 		UnfamiliarNodesTable: []PeerID{},
-		AllNodes:             make(map[string]*Peer),
-		TemporaryConns:       make(map[uint64]net.Conn),
+		AllNodesLen:          0,
+		TemporaryConnsLen:    0,
 		PeerChangeMux:        sync.Mutex{},
 		msgHandler:           nil,
 		MyselfIsPublicPeer:   false,

@@ -52,18 +52,21 @@ func (p *P2P) loop() {
 		case <-pingAllNodesTiker.C:
 			// 给所有节点发送ping消息
 			ct := time.Now()
-			for _, peer := range p.AllNodes {
+			p.AllNodes.Range(func(key, value interface{}) bool {
+				peer := value.(*Peer)
 				if peer != nil {
 					if peer.activeTime.Add(time.Minute * 5).Before(ct) {
 						sendTcpMsg(peer.conn, P2PMsgTypePing, nil) // send ping
 					}
 				}
-			}
+				return true
+			})
 
 		case <-checkNodesActiveTiker.C:
 			// 检查所有节点的活跃度
 			ct := time.Now()
-			for _, peer := range p.AllNodes {
+			p.AllNodes.Range(func(key, value interface{}) bool {
+				peer := value.(*Peer)
 				if peer != nil {
 					if peer.activeTime.Add(time.Minute * 10).Before(ct) {
 						// 10分钟无消息，为失去活跃的节点
@@ -71,7 +74,8 @@ func (p *P2P) loop() {
 						peer.Disconnect()
 					}
 				}
-			}
+				return true
+			})
 
 		case <-findNodesTiker.C:
 			if len(p.BackboneNodeTable) == 0 {
@@ -83,7 +87,7 @@ func (p *P2P) loop() {
 			}
 			// 打印最新的连接情况
 			fmt.Printf("[P2P] connected peers: %d public, %d private, total: %d nodes, %d conns.\n",
-				len(p.BackboneNodeTable), len(p.OrdinaryNodeTable), len(p.AllNodes), len(p.TemporaryConns))
+				len(p.BackboneNodeTable), len(p.OrdinaryNodeTable), p.AllNodesLen, p.TemporaryConnsLen)
 
 		}
 

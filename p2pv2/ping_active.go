@@ -15,11 +15,13 @@ func (p *P2P) continuePingToKeepTcpLinkAlive() {
 			break // 我是公网节点，停止ping保活
 		}
 		// 给所有节点发送ping消息
-		for _, peer := range p.AllNodes {
+		p.AllNodes.Range(func(key, value interface{}) bool {
+			peer := value.(*Peer)
 			if peer != nil {
 				sendTcpMsg(peer.conn, P2PMsgTypePing, nil) // send ping
 			}
-		}
+			return true
+		})
 	}
 
 }

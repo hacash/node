@@ -11,7 +11,9 @@ func (p *P2P) handleNewConn(conn net.Conn, createPeer *Peer) {
 	connid := rand.Uint64()
 
 	p.PeerChangeMux.Lock()
-	p.TemporaryConns[connid] = conn
+	//p.TemporaryConns[connid] = conn
+	p.TemporaryConns.Store(connid, conn)
+	p.TemporaryConnsLen += 1
 	p.PeerChangeMux.Unlock()
 
 	if createPeer == nil {
@@ -62,7 +64,8 @@ func (p *P2P) handleNewConn(conn net.Conn, createPeer *Peer) {
 	//fmt.Println("p.dropPeerByConnIDUnsafe(connid)", connid)
 	p.PeerChangeMux.Lock()
 	p.dropPeerByConnIDUnsafe(connid)
-	delete(p.TemporaryConns, connid)
+	p.TemporaryConns.Delete(connid)
+	p.TemporaryConnsLen -= 1
 	p.PeerChangeMux.Unlock()
 
 }

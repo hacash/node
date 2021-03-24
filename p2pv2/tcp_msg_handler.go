@@ -89,7 +89,8 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 		peer.Name = strings.TrimRight(peerName, " ")
 		// 添加进公网节点表
 		p.PeerChangeMux.Lock()
-		p.AllNodes[string(peerId)] = peer
+		p.AllNodes.Store(string(peerId), peer)
+		p.AllNodesLen += 1
 		p.addPeerIntoTargetTableUnsafe(&p.BackboneNodeTable, p.Config.BackboneNodeTableSizeMax, peer)
 		p.PeerChangeMux.Unlock()
 		// 通知连接成功
@@ -119,7 +120,9 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 		peer.Name = strings.TrimRight(peerName, " ")
 		// 连接加入节点
 		oldPeerIsBackboneNode := false // 旧节点是否为骨干节点
-		if oldpeer, hasp := p.AllNodes[string(peerId)]; hasp {
+
+		if oldp, hasp := p.AllNodes.Load(string(peerId)); hasp {
+			oldpeer := oldp.(*Peer)
 			// 已经存在如何处理？
 			oldPeerIsBackboneNode = oldpeer.PublicIpPort != nil
 			peer.ReplacingCopyInfo(oldpeer)
@@ -137,7 +140,8 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 		}
 		// 添加为新的节点
 		p.PeerChangeMux.Lock()
-		p.AllNodes[string(peerId)] = peer
+		p.AllNodes.Store(string(peerId), peer)
+		p.AllNodesLen += 1
 		p.addPeerIntoUnfamiliarTableUnsafe(peer)
 		p.PeerChangeMux.Unlock()
 

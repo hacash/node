@@ -1,8 +1,9 @@
 package p2pv2
 
 func (p *P2P) getPeerByID(pid PeerID) *Peer {
-	if peer, has := p.AllNodes[string(pid)]; has {
-		return peer
+	v, ok := p.AllNodes.Load(string(pid))
+	if ok {
+		return v.(*Peer)
 	}
 	return nil
 }
@@ -85,12 +86,16 @@ func (p *P2P) dropPeerByConnID(cid uint64) {
 func (p *P2P) dropPeerByConnIDUnsafe(cid uint64) {
 	var peer *Peer = nil
 	// 查询
-	for _, p := range p.AllNodes {
-		if p.connid == cid {
-			peer = p
-			break
+	p.AllNodes.Range(func(key, value interface{}) bool {
+		p := value.(*Peer)
+		if p != nil {
+			if p.connid == cid {
+				peer = p
+				return false
+			}
 		}
-	}
+		return true
+	})
 	// 移除
 	if peer != nil {
 		pid := peer.ID
@@ -103,7 +108,8 @@ func (p *P2P) dropPeerByConnIDUnsafe(cid uint64) {
 		if rmok, newtbs := removePeerIDFromTable(p.UnfamiliarNodesTable, pid); rmok {
 			p.UnfamiliarNodesTable = newtbs // 更新表
 		}
-		delete(p.AllNodes, string(pid))
+		p.AllNodes.Delete(string(pid))
+		p.AllNodesLen -= 1
 		peer.notifyClose()
 	}
 }

@@ -44,14 +44,18 @@ func (p *P2P) GetConfigOfBootNodeFastSync() bool {
  */
 
 func (p *P2P) PeerLen() int {
-	return len(p.AllNodes)
+	return p.AllNodesLen
 }
 
 func (p *P2P) GetAllPeers() []interfaces.P2PMsgPeer {
 	nodes := []interfaces.P2PMsgPeer{}
-	for _, v := range p.AllNodes {
-		nodes = append(nodes, v)
-	}
+
+	p.AllNodes.Range(func(key, value interface{}) bool {
+		peer := value.(*Peer)
+		nodes = append(nodes, peer)
+		return true
+	})
+
 	return nodes
 }
 
@@ -72,10 +76,11 @@ func (p *P2P) FindAnyOnePeerBetterBePublic() interfaces.P2PMsgPeer {
 		}
 	}
 	if tarnode == nil {
-		for _, nd := range p.AllNodes {
-			tarnode = nd // 随机取一个
-			break
-		}
+		p.AllNodes.Range(func(key, value interface{}) bool {
+			peer := value.(*Peer)
+			tarnode = peer // 随机取一个
+			return false
+		})
 	}
 	// 返回
 	return tarnode
