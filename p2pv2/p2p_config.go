@@ -19,7 +19,8 @@ type P2PConfig struct {
 	StaticHnodeAddrs []*net.TCPAddr // IP:port ...
 	TCPListenPort    int
 
-	BootNodeFastSync bool
+	BootNodeFastSync bool // 引导节点快速同步
+	DisableFindNodes bool // 关闭查找更多节点
 
 	// 骨干/超级/公网 节点 连接表大小
 	BackboneNodeTableSizeMax int `json:"backbone_node_table_size_max"`
@@ -35,7 +36,7 @@ func NewEmptyP2PConfig() *P2PConfig {
 		ID:                         nil,
 		TCPListenPort:              3331,
 		BootNodeFastSync:           false,
-		BackboneNodeTableSizeMax:   8,
+		BackboneNodeTableSizeMax:   5,
 		OrdinaryNodeTableSizeMax:   32,
 		UnfamiliarNodeTableSizeMax: 128,
 	}
@@ -70,6 +71,7 @@ func NewP2PConfig(cnffile *sys.Inicnf) *P2PConfig {
 	}
 	snfs := ini_section_p2p.Key("boot_node_fast_sync").MustBool(false)
 	cnf.BootNodeFastSync = snfs
+	cnf.DisableFindNodes = ini_section_p2p.Key("disable_find_nodes").MustBool(false)
 	// static node url bootnodes
 	boot_nodes := cnffile.StringValueList("p2p", "boot_nodes")
 	for _, one := range boot_nodes {

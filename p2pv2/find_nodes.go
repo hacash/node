@@ -12,6 +12,11 @@ import (
  * 搜寻离自己最近的节点
  */
 func (p *P2P) findNodes() {
+	if p.Config.DisableFindNodes {
+		// 关闭搜寻节点
+		return
+	}
+
 	swapped := atomic.CompareAndSwapUint32(&p.isInFindingNode, 0, 1)
 	if !swapped {
 		return // 正在寻找节点间
