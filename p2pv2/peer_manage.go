@@ -58,6 +58,9 @@ func (p *P2P) upgradeOneUnfamiliarNodeLevelUnsafe() {
 		p.UnfamiliarNodesTable = p.UnfamiliarNodesTable[1:]
 		// 是否为公网节点
 		droppeer := p.getPeerByID(olderone)
+		if droppeer == nil {
+			return // 返回
+		}
 		if droppeer.PublicIpPort != nil {
 			p.addPeerIntoTargetTableUnsafe(&p.BackboneNodeTable, p.Config.BackboneNodeTableSizeMax, droppeer) // 公网节点
 		} else {
