@@ -55,6 +55,7 @@ func (p *P2P) GetAllPeers() []interfaces.P2PMsgPeer {
 		nodes = append(nodes, peer)
 		return true
 	})
+	p.AllNodesLen = len(nodes) // reset count
 
 	return nodes
 }

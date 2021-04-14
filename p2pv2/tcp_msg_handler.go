@@ -89,8 +89,7 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 		peer.Name = strings.TrimRight(peerName, " ")
 		// 添加进公网节点表
 		p.PeerChangeMux.Lock()
-		p.AllNodes.Store(string(peerId), peer)
-		p.AllNodesLen += 1
+		p.addPeerAllNodesUnsafe(peer)
 		p.addPeerIntoTargetTableUnsafe(&p.BackboneNodeTable, p.Config.BackboneNodeTableSizeMax, peer)
 		p.PeerChangeMux.Unlock()
 		// 通知连接成功
@@ -140,8 +139,7 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 		}
 		// 添加为新的节点
 		p.PeerChangeMux.Lock()
-		p.AllNodes.Store(string(peerId), peer)
-		p.AllNodesLen += 1
+		p.addPeerAllNodesUnsafe(peer)
 		p.addPeerIntoUnfamiliarTableUnsafe(peer)
 		p.PeerChangeMux.Unlock()
 

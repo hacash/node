@@ -79,6 +79,16 @@ func (p *P2P) addPeerIntoUnfamiliarTableUnsafe(peer *Peer) {
 	}
 }
 
+//
+func (p *P2P) addPeerAllNodesUnsafe(peer *Peer) {
+	// 加入
+	peerId := peer.ID
+	_, have := p.AllNodes.LoadOrStore(string(peerId), peer)
+	if !have {
+		p.AllNodesLen += 1
+	}
+}
+
 func (p *P2P) dropPeerByConnID(cid uint64) {
 	p.PeerChangeMux.Lock()
 	defer p.PeerChangeMux.Unlock()
