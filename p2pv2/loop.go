@@ -8,10 +8,10 @@ func (p *P2P) loop() {
 
 	pingAllNodesTiker := time.NewTicker(time.Minute * 3)
 	checkNodesActiveTiker := time.NewTicker(time.Minute * 5)
-	findNodesTiker := time.NewTicker(time.Minute * 37) // 37 分钟 findnode 一次
+	findNodesTiker := time.NewTicker(time.Minute * 77) // 77分钟 findnodes 一次
 	//findNodesTiker := time.NewTicker(time.Second * 15)            // 测试
-	forceReconnectBootNodesTiker := time.NewTicker(time.Hour * 8) // 8小时强制boot重连一次
-	upgradeNodeLevelTiker := time.NewTicker(time.Second * 70)     // 提升节点等级 70s
+	upgradeNodeLevelTiker := time.NewTicker(time.Second * 70) // 提升节点等级 70s
+	//forceReconnectBootNodesTiker := time.NewTicker(time.Hour * 8) // 8小时强制boot重连一次
 
 	// 任务
 	for {
@@ -44,10 +44,10 @@ func (p *P2P) loop() {
 				break
 			}
 
-		case <-forceReconnectBootNodesTiker.C:
-			// 尝试重连静态节点
-			p.tryConnectToStaticBootNodes()
-			break
+		//case <-forceReconnectBootNodesTiker.C:
+		//	// 尝试重连静态节点
+		//	p.tryConnectToStaticBootNodes()
+		//	break
 
 		case <-pingAllNodesTiker.C:
 			// 给所有节点发送ping消息
@@ -55,6 +55,7 @@ func (p *P2P) loop() {
 			p.AllNodes.Range(func(key, value interface{}) bool {
 				peer := value.(*Peer)
 				if peer != nil {
+					// 超过5分钟没有活跃的节点
 					if peer.activeTime.Add(time.Minute * 5).Before(ct) {
 						sendTcpMsg(peer.conn, P2PMsgTypePing, nil) // send ping
 					}

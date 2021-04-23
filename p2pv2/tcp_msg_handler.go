@@ -103,9 +103,8 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 		break
 
 	case P2PMsgTypeReportIdKeepConnectAsPeer:
-		// 请求对方持久连接
+		// 对方请求持久连接
 		//fmt.Println("P2PMsgTypeReportIdKeepConnectAsPeer")
-
 		if len(msgbody) != 4+PeerIDSize+PeerNameSize {
 			break
 		}
@@ -119,7 +118,6 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 		peer.Name = strings.TrimRight(peerName, " ")
 		// 连接加入节点
 		oldPeerIsBackboneNode := false // 旧节点是否为骨干节点
-
 		if oldp, hasp := p.AllNodes.Load(string(peerId)); hasp {
 			oldpeer := oldp.(*Peer)
 			// 已经存在如何处理？

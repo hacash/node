@@ -66,6 +66,4 @@ func (p *P2P) doStart() {
 
 	go p.tryConnectToStaticBootNodes()
 
-	go p.continuePingToKeepTcpLinkAlive()
-
 }
