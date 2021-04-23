@@ -1,7 +1,6 @@
 package p2pv2
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -9,8 +8,9 @@ func (p *P2P) loop() {
 
 	pingAllNodesTiker := time.NewTicker(time.Minute * 3)
 	checkNodesActiveTiker := time.NewTicker(time.Minute * 5)
-	findNodesTiker := time.NewTicker(time.Minute * 37)            // 37 分钟 findnode 一次
-	forceReconnectBootNodesTiker := time.NewTicker(time.Hour * 6) // 6小时boot重连一次
+	findNodesTiker := time.NewTicker(time.Minute * 37) // 37 分钟 findnode 一次
+	//findNodesTiker := time.NewTicker(time.Second * 15)            // 测试
+	forceReconnectBootNodesTiker := time.NewTicker(time.Hour * 8) // 8小时强制boot重连一次
 	upgradeNodeLevelTiker := time.NewTicker(time.Second * 70)     // 提升节点等级 70s
 
 	// 任务
@@ -70,7 +70,7 @@ func (p *P2P) loop() {
 				if peer != nil {
 					if peer.activeTime.Add(time.Minute * 10).Before(ct) {
 						// 10分钟无消息，为失去活跃的节点
-						peer.ActiveOvertime = true
+						peer.RemoveActiveOvertime = true
 						peer.Disconnect()
 					}
 				}
@@ -85,10 +85,6 @@ func (p *P2P) loop() {
 				// 寻找最近的节点
 				p.findNodes()
 			}
-			// 打印最新的连接情况
-			fmt.Printf("[P2P] connected peers: %d public, %d private, total: %d nodes, %d conns.\n",
-				len(p.BackboneNodeTable), len(p.OrdinaryNodeTable), p.AllNodesLen, p.TemporaryConnsLen)
-
 		}
 
 	}

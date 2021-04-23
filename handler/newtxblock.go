@@ -5,6 +5,7 @@ import (
 	"github.com/hacash/core/blocks"
 	"github.com/hacash/core/interfaces"
 	"github.com/hacash/core/transactions"
+	"sync/atomic"
 	"time"
 )
 
@@ -12,11 +13,29 @@ const (
 	time_format_layout = "01/02 15:04:05"
 )
 
+// 当前正在执行插入的区块高度
+var currentInsertingBlockHeight uint64 = 0
+
 func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	//fmt.Println("GetBlockDiscover", 1)
+	// 先解析区块头，以提升并发收到区块时的性能
+	blockhead, _, e0 := blocks.ParseBlockHead(msgbody, 0)
+	if e0 != nil {
+		return // error end
+	}
+	curblkhei := blockhead.GetHeight()
+	// 判断正在插入的区块高度
+	if !atomic.CompareAndSwapUint64(&currentInsertingBlockHeight, currentInsertingBlockHeight, curblkhei) {
+		return // 正在插入相同的区块，忽略消息
+	}
+	// 状态重置
+	go func() {
+		time.Sleep(time.Second * 10)
+		atomic.StoreUint64(&currentInsertingBlockHeight, 0)
+	}()
+	// 解析完整区块
 	block, _, e1 := blocks.ParseBlock(msgbody, 0)
 	if e1 != nil {
-		//fmt.Println(e1, msgbody)
 		return // error end
 	}
 	//fmt.Println("GetBlockDiscover", 2)
@@ -56,7 +75,7 @@ func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChai
 		fmt.Printf("ok.\n")
 	} else {
 		//fmt.Printf("\n\n---------------\n-- %s\n---------------\n\n", err.Error())
-		fmt.Println("\n" + err.Error())
+		fmt.Println("\n" + err.Error() + "\n")
 	}
 }
 

@@ -1,5 +1,7 @@
 package p2pv2
 
+import "bytes"
+
 func (p *P2P) getPeerByID(pid PeerID) *Peer {
 	v, ok := p.AllNodes.Load(string(pid))
 	if ok {
@@ -17,8 +19,8 @@ func (p *P2P) addPeerIntoTargetTable(tables *[]PeerID, maxsize int, peer *Peer) 
 }
 
 // 加入指定的节点表
-func (p *P2P) addPeerIntoTargetTableUnsafe(tables *[]PeerID, maxsize int, peer *Peer) {
-
+func (p *P2P) addPeerIntoTargetTableUnsafe(tables *[]PeerID, maxsize int, peer *Peer) bool {
+	var addSuccessfully = true // 是否成功添加，没有立即被移除
 	// 插入
 	istok, _, newtables, dropid := insertUpdateTopologyDistancePeerIDTable(p.peerSelf.ID, peer.ID, *tables, maxsize)
 	if istok {
@@ -28,10 +30,16 @@ func (p *P2P) addPeerIntoTargetTableUnsafe(tables *[]PeerID, maxsize int, peer *
 	if dropid != nil {
 		droppeer := p.getPeerByID(dropid)
 		if droppeer != nil {
-			droppeer.FarawayClose = true
+			droppeer.RemoveFarawayClose = true // 拓扑图太远
+			if bytes.Compare(droppeer.ID, peer.ID) == 0 {
+				// 拓扑图太远，立即被移除了
+				droppeer.RemoveImmediately = true //立即移除
+				addSuccessfully = false           // 添加失败
+			}
 			droppeer.Disconnect()
 		}
 	}
+	return addSuccessfully
 }
 
 // 加入陌生节点

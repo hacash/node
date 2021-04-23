@@ -2,6 +2,7 @@ package p2pv2
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net"
 	"sync/atomic"
@@ -31,15 +32,36 @@ func (p *P2P) findNodes() {
 	p.doFindNearestPublicNodes(nil, nil, &tarnodes, fdndmax, alradySuckAddrStrs)
 
 	// 按顺序连接
-	for i := len(tarnodes) - 1; i >= 0; i-- {
+	fdnodenum := len(tarnodes)
+	realconnectnum := 0 // 真实发起连接的节点数量
+	fmt.Printf("[P2P] ")
+	if fdnodenum > 0 {
+		fmt.Printf("find %d nearest public nodes to update topology table, ", fdnodenum)
+	}
+
+	// 依次判断亲源和连接
+	for i := fdnodenum - 1; i >= 0; i-- {
 		node := tarnodes[i]
 		//fmt.Println(node.TcpAddr.String())
-		haspeer := p.getPeerByID(node.ID)
-		// 判断是否已经连接
-		if haspeer == nil {
+		// 判断拓扑图更新状态
+		if isCanUpdateTopologyDistancePeerIDTable(p.peerSelf.ID, node.ID, p.BackboneNodeTable, p.Config.BackboneNodeTableSizeMax) {
+			// 拓扑亲源关系检查通过，发起连接
+			// fmt.Println(len(p.BackboneNodeTable), p.Config.BackboneNodeTableSizeMax, hex.EncodeToString(node.ID))
+			if realconnectnum == 0 {
+				fmt.Printf("\n") // 打印美观
+			}
+			realconnectnum++
 			p.ConnectNodeInitiative(node.TcpAddr)
 		}
+
 	}
+	if realconnectnum > 0 {
+		time.Sleep(time.Second * 2)
+		fmt.Printf("[P2P] ") // 打印美观
+	}
+	// 打印最新的连接情况
+	fmt.Printf("connected peers: %d public, %d private, total: %d nodes, %d conns.\n",
+		len(p.BackboneNodeTable), len(p.OrdinaryNodeTable), p.AllNodesLen, p.TemporaryConnsLen)
 
 	// 节点全部查询成功
 	atomic.CompareAndSwapUint32(&p.isInFindingNode, 1, 0)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 )
 
+// 从表中移除一个
 func removePeerIDFromTable(idtables []PeerID, rmid PeerID) (bool, []PeerID) {
 	rmidx := -1
 	for i, v := range idtables {
@@ -28,6 +29,28 @@ func removePeerIDFromTable(idtables []PeerID, rmid PeerID) (bool, []PeerID) {
 	newtable = append(newtable, idtables[0:rmidx]...)
 	newtable = append(newtable, idtables[rmidx+1:]...)
 	return true, newtable
+}
+
+/**
+ * 判断表单是否可以/会被更新
+ */
+func isCanUpdateTopologyDistancePeerIDTable(ori PeerID, insert PeerID, idtables []PeerID, tablesizemax int) bool {
+	rlnum := len(idtables)
+	if tablesizemax <= 0 {
+		return false // 表空间为零，无法更新
+	}
+	if rlnum < tablesizemax {
+		return true // 空表或数量未满，可以更新
+	}
+	// 表中第一个判断比较
+	lastp := idtables[0]
+	dsv := compareTopologyDistanceForPeerID(ori, insert, lastp)
+	if dsv == 1 {
+		// insert 的关系更近，可以更新
+		return true // 空表或数量未满，可以更新
+	}
+	// 亲缘关系不够，不能更新
+	return false
 }
 
 /**
