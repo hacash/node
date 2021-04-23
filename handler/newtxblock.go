@@ -25,12 +25,19 @@ func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChai
 	}
 	curblkhei := blockhead.GetHeight()
 	// 判断正在插入的区块高度
-	if !atomic.CompareAndSwapUint64(&currentInsertingBlockHeight, currentInsertingBlockHeight, curblkhei) {
-		return // 正在插入相同的区块，忽略消息
+	if atomic.CompareAndSwapUint64(&currentInsertingBlockHeight, 0, curblkhei) {
+		// 未插入区块，继续插入
+	} else {
+		// 判断插入的区块是否和当前的相同
+		if atomic.CompareAndSwapUint64(&currentInsertingBlockHeight, curblkhei, curblkhei) {
+			return // 正在插入相同的区块，忽略消息
+		}
+		// 标记正在插入区块的高度
+		atomic.StoreUint64(&currentInsertingBlockHeight, curblkhei)
 	}
 	// 状态重置
 	go func() {
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 5)
 		atomic.StoreUint64(&currentInsertingBlockHeight, 0)
 	}()
 	// 解析完整区块
