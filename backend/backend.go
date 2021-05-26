@@ -45,6 +45,7 @@ func NewBackend(config *BackendConfig) (*Backend, error) {
 	bccnf := blockchain.NewBlockChainConfig(config.cnffile)
 	bc, err2 := blockchain.NewBlockChain(bccnf)
 	if err2 != nil {
+		fmt.Println("blockchain.NewBlockChain Error", err2)
 		return nil, err2
 	}
 	backend.blockchain = bc
