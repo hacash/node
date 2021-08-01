@@ -107,7 +107,7 @@ func GetBlockHashList(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPe
 	if hashnum == 80 {
 		printWarning(
 			"[Warning] Block data fork is serious and cannot be synchronized. Please delete all data and restart.\n" +
-				"【警告】你的区块数据分叉严重，已超过80个区块与全网不匹配，若想恢复请删除全部数据，并从头开始同步区块。")
+				"【警告】你的区块数据分叉严重，已超过80个区块与全网不匹配，若想恢复，请删除全部数据，并从头开始同步区块。")
 		return
 	}
 
