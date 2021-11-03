@@ -5,7 +5,6 @@ import (
 	"github.com/hacash/core/interfaces"
 	"github.com/hacash/mint/blockchain"
 	"github.com/hacash/node/p2pv2"
-	"os"
 	"strings"
 	"sync"
 )
@@ -58,18 +57,21 @@ func NewBackend(config *BackendConfig) (*Backend, error) {
 }
 
 // Start
-func (hn *Backend) Start() {
+func (hn *Backend) Start() error {
 
 	if hn.blockchain != nil {
-		hn.blockchain.Start()
+		err := hn.blockchain.Start()
+		if err != nil {
+			return err
+		}
 	} else {
-		fmt.Println(fmt.Errorf("[Backend] blockchain is nil."))
-		os.Exit(0)
+		err := fmt.Errorf("[Backend] blockchain is nil.")
+		return err
 	}
 
-	hn.p2p.Start()
-
 	go hn.loop()
+
+	return hn.p2p.Start()
 
 }
 

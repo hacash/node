@@ -14,8 +14,8 @@ import (
  * P2P => P2PManager
  */
 
-func (p *P2P) Start() {
-	p.doStart()
+func (p *P2P) Start() error {
+	return p.doStart()
 }
 
 // 返回 false 为已经知晓

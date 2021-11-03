@@ -59,11 +59,11 @@ func NewP2P(cnf *P2PConfig) *P2P {
 	return p2pobj
 }
 
-func (p *P2P) doStart() {
+func (p *P2P) doStart() error {
 
 	go p.loop()
-	go p.listen(p.Config.TCPListenPort)
 
 	go p.tryConnectToStaticBootNodes()
 
+	return p.listen(p.Config.TCPListenPort)
 }
