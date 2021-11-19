@@ -60,8 +60,10 @@ func (p *P2P) findNodes() {
 		fmt.Printf("[P2P] ") // 打印美观
 	}
 	// 打印最新的连接情况
+	p.PeerChangeMux.RLock()
 	fmt.Printf("connected peers: %d public, %d private, total: %d nodes, %d conns.\n",
 		len(p.BackboneNodeTable), len(p.OrdinaryNodeTable), p.AllNodesLen, p.TemporaryConnsLen)
+	p.PeerChangeMux.RUnlock()
 
 	// 节点全部查询成功
 	atomic.CompareAndSwapUint32(&p.isInFindingNode, 1, 0)
