@@ -21,7 +21,7 @@ type P2P struct {
 	TemporaryConnsLen int
 	TemporaryConns    sync.Map // [uint64]net.Conn // 临时连接池
 
-	PeerChangeMux sync.Mutex
+	PeerChangeMux sync.RWMutex
 
 	// my peer
 	peerSelf           *Peer
@@ -40,7 +40,7 @@ func NewP2P(cnf *P2PConfig) *P2P {
 		UnfamiliarNodesTable: []PeerID{},
 		AllNodesLen:          0,
 		TemporaryConnsLen:    0,
-		PeerChangeMux:        sync.Mutex{},
+		PeerChangeMux:        sync.RWMutex{},
 		msgHandler:           nil,
 		MyselfIsPublicPeer:   false,
 		isInFindingNode:      0,
