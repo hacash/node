@@ -97,9 +97,12 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 		// 通知对方为公网节点
 		sendTcpMsg(conn, P2PMsgTypeRemindMeIsPublicPeer, nil)
 		// 判断是否需要执行第一次查找节点
+		p.PeerChangeMux.RLock()
 		if len(p.BackboneNodeTable) == 1 {
 			p.findNodes()
 		}
+		p.PeerChangeMux.RUnlock()
+
 		break
 
 	case P2PMsgTypeReportIdKeepConnectAsPeer:
