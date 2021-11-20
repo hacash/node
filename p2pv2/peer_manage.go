@@ -23,9 +23,13 @@ func (p *P2P) addPeerIntoTargetTableUnsafe(tables *[]PeerID, maxsize int, peer *
 	var addSuccessfully = true // 是否成功添加，没有立即被移除
 	// 插入
 	istok, _, newtables, dropid := insertUpdateTopologyDistancePeerIDTable(p.peerSelf.ID, peer.ID, *tables, maxsize)
+
+	p.PeerChangeMux.Lock()
 	if istok {
 		*tables = newtables // 更新
 	}
+	p.PeerChangeMux.Unlock()
+
 	// 移除多余的
 	if dropid != nil {
 		droppeer := p.getPeerByID(dropid)
