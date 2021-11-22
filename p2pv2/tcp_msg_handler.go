@@ -14,7 +14,9 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 	// fmt.Println("- - - - p2p.handleConnMsg", conn.RemoteAddr().String(), ":", msg)
 
 	ct := time.Now()
+	p.PeerChangeMux.Lock()
 	peer.activeTime = &ct // 活跃时间
+	p.PeerChangeMux.Unlock()
 
 	// 处理消息
 	msgty := msg[0]
