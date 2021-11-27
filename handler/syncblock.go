@@ -82,12 +82,13 @@ func GetBlockHashList(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPe
 		tarhash := allhashes[i*32 : i*32+32]
 		equalForNow := myheihash.Equal(tarhash)
 		if curhei == bigHei && equalForNow {
-			// get blocks data
+			// get blocks data // 没有分叉只是区块落后，同步新区块即可
 			msgParseSendRequestBlocks(peer, curhei+1)
 			return
 		}
 		if equalForNow {
 			rollbackToHeight = curhei
+			break // 检查分叉完成
 		}
 		i++
 	}
