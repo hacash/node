@@ -49,7 +49,7 @@ func NewP2PConfig(cnffile *sys.Inicnf) *P2PConfig {
 
 	cnf := NewEmptyP2PConfig()
 
-	data_dir := path.Join(cnffile.MustDataDir(), "node")
+	data_dir := path.Join(cnffile.MustDataDirWithVersion(), "node")
 	p2pid := readIDFromDisk(data_dir)
 	if p2pid == nil {
 		p2pid = make([]byte, 16)
