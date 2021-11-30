@@ -1,11 +1,11 @@
 package backend
 
 import (
-	"github.com/hacash/core/interfaces"
+	"github.com/hacash/core/interfacev2"
 	"github.com/hacash/node/handler"
 )
 
-func (hn *Backend) broadcastNewBlockDiscover(block interfaces.Block) {
+func (hn *Backend) broadcastNewBlockDiscover(block interfacev2.Block) {
 	hn.msgFlowLock.Lock()
 	defer hn.msgFlowLock.Unlock()
 
@@ -28,7 +28,7 @@ func (hn *Backend) broadcastNewBlockDiscover(block interfaces.Block) {
 	hn.msghandler.BroadcastDataMessageToUnawarePeers(handler.MsgTypeDiscoverNewBlock, blockdata, "block", blkhxstr)
 }
 
-func (hn *Backend) broadcastNewTxSubmit(tx interfaces.Transaction) {
+func (hn *Backend) broadcastNewTxSubmit(tx interfacev2.Transaction) {
 	hn.msgFlowLock.Lock()
 	defer hn.msgFlowLock.Unlock()
 

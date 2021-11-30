@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/hacash/core/blocks"
-	"github.com/hacash/core/interfaces"
+	"github.com/hacash/core/interfacev2"
 	"github.com/hacash/mint"
 	"github.com/hacash/node/websocket"
 	"strconv"
@@ -22,7 +22,7 @@ func (h *Backend) SyncBlockFromWebSocketApi(ws_url string) error {
 		return e2
 	}
 
-	curblk, err := h.blockchain.State().ReadLastestBlockHeadAndMeta()
+	curblk, err := h.blockchain.StateRead().ReadLastestBlockHeadMetaForRead()
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func (h *Backend) DownloadBlocksDataFromWebSocketApi(ws_url string, start_height
 	return start_block_height, nil
 }
 
-func newBlocksDataArrive(blockchain interfaces.BlockChain, datas []byte) (uint64, error) {
+func newBlocksDataArrive(blockchain interfacev2.BlockChain, datas []byte) (uint64, error) {
 
 	start_block_height := uint64(0)
 

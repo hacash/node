@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/hacash/core/interfaces"
+	"github.com/hacash/core/interfacev2"
 	"net"
 	"sync"
 	"time"
@@ -13,8 +13,8 @@ import (
 type PeerID []byte
 
 type Peer struct {
-	communicator interfaces.P2PMsgCommunicator
-	msghandler   interfaces.P2PMsgDataHandler
+	communicator interfacev2.P2PMsgCommunicator
+	msghandler   interfacev2.P2PMsgDataHandler
 
 	connid uint64
 	conn   net.Conn
@@ -36,7 +36,7 @@ type Peer struct {
 	RemoveReplacing      bool // 替换
 }
 
-func NewEmptyPeer(cmtr interfaces.P2PMsgCommunicator, msgdlr interfaces.P2PMsgDataHandler) *Peer {
+func NewEmptyPeer(cmtr interfacev2.P2PMsgCommunicator, msgdlr interfacev2.P2PMsgDataHandler) *Peer {
 	ct := time.Now()
 	return &Peer{
 		communicator:                       cmtr,

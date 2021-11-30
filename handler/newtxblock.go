@@ -3,7 +3,7 @@ package handler
 import (
 	"fmt"
 	"github.com/hacash/core/blocks"
-	"github.com/hacash/core/interfaces"
+	"github.com/hacash/core/interfacev2"
 	"github.com/hacash/core/transactions"
 	"sync"
 	"time"
@@ -17,7 +17,7 @@ const (
 var blockDiscoverMutex sync.Mutex
 var transactionSubmitMutex sync.Mutex
 
-func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
+func GetBlockDiscover(p2p interfacev2.P2PManager, blockchain interfacev2.BlockChain, peer interfacev2.P2PMsgPeer, msgbody []byte) {
 	blockDiscoverMutex.Lock()
 	defer blockDiscoverMutex.Unlock()
 
@@ -44,7 +44,7 @@ func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChai
 	//fmt.Println("GetBlockDiscover", 4)
 	//fmt.Println("get: MrklRoot", block.GetMrklRoot().ToHex(), hex.EncodeToString(msgbody), msgbody)
 	// check lastest block
-	lastest, e4 := blockchain.State().ReadLastestBlockHeadAndMeta()
+	lastest, e4 := blockchain.StateRead().ReadLastestBlockHeadMetaForRead()
 	if e4 != nil {
 		return // errro end
 	}
@@ -73,7 +73,7 @@ func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChai
 	}
 }
 
-func GetTransactionSubmit(p2p interfaces.P2PManager, pool interfaces.TxPool, peer interfaces.P2PMsgPeer, msgbody []byte) {
+func GetTransactionSubmit(p2p interfacev2.P2PManager, pool interfacev2.TxPool, peer interfacev2.P2PMsgPeer, msgbody []byte) {
 	transactionSubmitMutex.Lock()
 	defer transactionSubmitMutex.Unlock()
 

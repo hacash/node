@@ -2,7 +2,7 @@ package backend
 
 import (
 	"fmt"
-	"github.com/hacash/core/interfaces"
+	"github.com/hacash/core/interfacev2"
 	"github.com/hacash/mint/blockchain"
 	"github.com/hacash/node/p2pv2"
 	"strings"
@@ -12,15 +12,15 @@ import (
 type Backend struct {
 	config *BackendConfig
 
-	p2p        interfaces.P2PManager
-	msghandler interfaces.P2PMsgCommunicator
+	p2p        interfacev2.P2PManager
+	msghandler interfacev2.P2PMsgCommunicator
 
-	txpool interfaces.TxPool
+	txpool interfacev2.TxPool
 
-	addTxToPoolSuccessCh      chan interfaces.Transaction
-	discoverNewBlockSuccessCh chan interfaces.Block
+	addTxToPoolSuccessCh      chan interfacev2.Transaction
+	discoverNewBlockSuccessCh chan interfacev2.Block
 
-	blockchain interfaces.BlockChain
+	blockchain interfacev2.BlockChain
 
 	msgFlowLock sync.Mutex
 }
@@ -30,8 +30,8 @@ func NewBackend(config *BackendConfig) (*Backend, error) {
 	backend := &Backend{
 		config:                    config,
 		msghandler:                nil,
-		addTxToPoolSuccessCh:      make(chan interfaces.Transaction, 5),
-		discoverNewBlockSuccessCh: make(chan interfaces.Block, 5),
+		addTxToPoolSuccessCh:      make(chan interfacev2.Transaction, 5),
+		discoverNewBlockSuccessCh: make(chan interfacev2.Block, 5),
 	}
 
 	// p2p
@@ -43,6 +43,8 @@ func NewBackend(config *BackendConfig) (*Backend, error) {
 	// blockchain
 	bccnf := blockchain.NewBlockChainConfig(config.cnffile)
 	bc, err2 := blockchain.NewBlockChain(bccnf)
+	//bccnf := blockchainv3.NewBlockChainConfig(config.cnffile)
+	//bc, err2 := blockchainv3.NewBlockChain(bccnf)
 	if err2 != nil {
 		fmt.Println("blockchain.NewBlockChain Error", err2)
 		return nil, err2
@@ -76,12 +78,12 @@ func (hn *Backend) Start() error {
 }
 
 //
-func (hn *Backend) BlockChain() interfaces.BlockChain {
+func (hn *Backend) BlockChain() interfacev2.BlockChain {
 	return hn.blockchain
 }
 
 // set
-func (hn *Backend) SetTxPool(pool interfaces.TxPool) {
+func (hn *Backend) SetTxPool(pool interfacev2.TxPool) {
 	hn.txpool = pool
 	// add tx feed
 	pool.SubscribeOnAddTxSuccess(hn.addTxToPoolSuccessCh)

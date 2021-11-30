@@ -5,13 +5,13 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/hacash/core/blocks"
-	"github.com/hacash/core/interfaces"
+	"github.com/hacash/core/interfacev2"
 	"sync"
 )
 
 var sendBlockDataMutex sync.Mutex
 
-func GetBlocksData(p2p interfaces.P2PManager, cmtr interfaces.P2PMsgCommunicator, blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
+func GetBlocksData(p2p interfacev2.P2PManager, cmtr interfacev2.P2PMsgCommunicator, blockchain interfacev2.BlockChain, peer interfacev2.P2PMsgPeer, msgbody []byte) {
 	if len(msgbody) < 3*8 {
 		return
 	}
@@ -68,7 +68,7 @@ func GetBlocksData(p2p interfaces.P2PManager, cmtr interfaces.P2PMsgCommunicator
 	msgParseSendRequestBlocks(peer, endHeight+1)
 }
 
-func SendBlocksData(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
+func SendBlocksData(blockchain interfacev2.BlockChain, peer interfacev2.P2PMsgPeer, msgbody []byte) {
 	sendBlockDataMutex.Lock()
 	defer sendBlockDataMutex.Unlock()
 
@@ -76,11 +76,11 @@ func SendBlocksData(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer
 	if len(msgbody) != 8 {
 		return
 	}
-	mylastblock, err := blockchain.State().ReadLastestBlockHeadAndMeta()
+	mylastblock, err := blockchain.StateRead().ReadLastestBlockHeadMetaForRead()
 	if err != nil {
 		return
 	}
-	blockstore := blockchain.State().BlockStore()
+	blockstore := blockchain.StateRead().BlockStoreRead()
 	lastestHeight := mylastblock.GetHeight()
 	startHeight := binary.BigEndian.Uint64(msgbody)
 	endHeight := uint64(0)
@@ -92,10 +92,10 @@ func SendBlocksData(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer
 	totalblknum := 0
 	for curhei := startHeight; curhei <= lastestHeight; curhei++ {
 		//fmt.Println("curhei", curhei)
-		_, oneblkbts, err := blockstore.ReadBlockBytesByHeight(curhei, 0)
-		//fmt.Println("curhei", curhei, "ReadBlockBytesByHeight")
+		_, oneblkbts, err := blockstore.ReadBlockBytesByHeight(curhei)
+		//fmt.Println("curhei", curhei, "ReadBlockBytesLengthByHeight")
 		if err != nil {
-			fmt.Println("P2P Message SendBlocksData ReadBlockBytesByHeight Error:", err.Error())
+			fmt.Println("P2P Message SendBlocksData ReadBlockBytesLengthByHeight Error:", err.Error())
 			return
 		}
 		if oneblkbts == nil {
