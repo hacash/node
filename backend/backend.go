@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hacash/core/interfacev2"
 	"github.com/hacash/mint/blockchain"
+	"github.com/hacash/mint/blockchainv3"
 	"github.com/hacash/node/p2pv2"
 	"strings"
 	"sync"
@@ -27,6 +28,8 @@ type Backend struct {
 
 func NewBackend(config *BackendConfig) (*Backend, error) {
 
+	var e error = nil
+
 	backend := &Backend{
 		config:                    config,
 		msghandler:                nil,
@@ -41,18 +44,24 @@ func NewBackend(config *BackendConfig) (*Backend, error) {
 	p2pmng.SetMsgHandler(backend) // handle msg
 
 	// blockchain
-	bccnf := blockchain.NewBlockChainConfig(config.cnffile)
-	bc, err2 := blockchain.NewBlockChain(bccnf)
-	//bccnf := blockchainv3.NewBlockChainConfig(config.cnffile)
-	//bc, err2 := blockchainv3.NewBlockChain(bccnf)
-	if err2 != nil {
-		fmt.Println("blockchain.NewBlockChain Error", err2)
-		return nil, err2
+	var blockchainObj interfacev2.BlockChain = nil
+	if config.UseBlockChainV3 {
+		// use v3
+		bccnf := blockchainv3.NewBlockChainConfig(config.cnffile)
+		blockchainObj, e = blockchainv3.NewBlockChain(bccnf)
+	} else {
+		// use v2
+		bccnf := blockchain.NewBlockChainConfig(config.cnffile)
+		blockchainObj, e = blockchain.NewBlockChain(bccnf)
 	}
-	backend.blockchain = bc
+	if e != nil {
+		fmt.Println("blockchain.NewBlockChain Error", e)
+		return nil, e
+	}
+	backend.blockchain = blockchainObj
 
 	// insert block success
-	bc.SubscribeValidatedBlockOnInsert(backend.discoverNewBlockSuccessCh)
+	blockchainObj.SubscribeValidatedBlockOnInsert(backend.discoverNewBlockSuccessCh)
 
 	// return
 	return backend, nil
