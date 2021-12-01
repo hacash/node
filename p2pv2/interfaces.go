@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"github.com/hacash/chain/mapset"
-	"github.com/hacash/core/interfacev2"
+	"github.com/hacash/core/interfaces"
 	"strconv"
 )
 
@@ -28,7 +28,7 @@ func (p *P2P) CheckKnowledge(KnowledgeKind string, KnowledgeKey string) bool {
 	return p.peerSelf.CheckKnowledge(KnowledgeKind, KnowledgeKey)
 }
 
-func (p *P2P) SetMsgHandler(msghdr interfacev2.P2PMsgDataHandler) {
+func (p *P2P) SetMsgHandler(msghdr interfaces.P2PMsgDataHandler) {
 	p.msgHandler = msghdr
 	p.peerSelf.msghandler = msghdr
 }
@@ -47,8 +47,8 @@ func (p *P2P) PeerLen() int {
 	return p.AllNodesLen
 }
 
-func (p *P2P) GetAllPeers() []interfacev2.P2PMsgPeer {
-	nodes := []interfacev2.P2PMsgPeer{}
+func (p *P2P) GetAllPeers() []interfaces.P2PMsgPeer {
+	nodes := []interfaces.P2PMsgPeer{}
 
 	p.AllNodes.Range(func(key, value interface{}) bool {
 		peer := value.(*Peer)
@@ -60,8 +60,8 @@ func (p *P2P) GetAllPeers() []interfacev2.P2PMsgPeer {
 	return nodes
 }
 
-func (p *P2P) FindAnyOnePeerBetterBePublic() interfacev2.P2PMsgPeer {
-	var tarnode interfacev2.P2PMsgPeer = nil
+func (p *P2P) FindAnyOnePeerBetterBePublic() interfaces.P2PMsgPeer {
+	var tarnode interfaces.P2PMsgPeer = nil
 	if len(p.BackboneNodeTable) > 0 {
 		nd := p.getPeerByID(p.BackboneNodeTable[0])
 		if nd != nil {

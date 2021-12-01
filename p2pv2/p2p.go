@@ -2,14 +2,14 @@ package p2pv2
 
 import (
 	"encoding/hex"
-	"github.com/hacash/core/interfacev2"
+	"github.com/hacash/core/interfaces"
 	"sync"
 )
 
 type P2P struct {
 	Config *P2PConfig
 
-	msgHandler interfacev2.P2PMsgDataHandler
+	msgHandler interfaces.P2PMsgDataHandler
 
 	BackboneNodeTable    []PeerID // 公网节点
 	OrdinaryNodeTable    []PeerID // 私网节点

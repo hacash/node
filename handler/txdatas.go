@@ -2,7 +2,7 @@ package handler
 
 import (
 	"bytes"
-	"github.com/hacash/core/interfacev2"
+	"github.com/hacash/core/interfaces"
 	"github.com/hacash/core/transactions"
 	"sync"
 	"time"
@@ -10,7 +10,7 @@ import (
 
 var sendTxDatasMutex sync.Mutex
 
-func GetRequestTxDatas(txpool interfacev2.TxPool, peer interfacev2.P2PMsgPeer) {
+func GetRequestTxDatas(txpool interfaces.TxPool, peer interfaces.P2PMsgPeer) {
 	sendTxDatasMutex.Lock()
 	defer sendTxDatasMutex.Unlock()
 
@@ -35,7 +35,7 @@ func GetRequestTxDatas(txpool interfacev2.TxPool, peer interfacev2.P2PMsgPeer) {
 
 }
 
-func GetTxDatas(txpool interfacev2.TxPool, msgbody []byte) {
+func GetTxDatas(txpool interfaces.TxPool, msgbody []byte) {
 
 	txpool.PauseEventSubscribe()
 	defer txpool.RenewalEventSubscribe()
@@ -52,7 +52,7 @@ func GetTxDatas(txpool interfacev2.TxPool, msgbody []byte) {
 		}
 		//fmt.Println( "GetTxDatas:", tx.Hash().ToHex() )
 		// add to pool
-		txpool.AddTx(tx)
+		txpool.AddTx(tx.(interfaces.Transaction))
 		seek = sk
 	}
 

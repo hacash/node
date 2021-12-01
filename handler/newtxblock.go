@@ -3,7 +3,7 @@ package handler
 import (
 	"fmt"
 	"github.com/hacash/core/blocks"
-	"github.com/hacash/core/interfacev2"
+	"github.com/hacash/core/interfaces"
 	"github.com/hacash/core/transactions"
 	"sync"
 	"time"
@@ -17,7 +17,7 @@ const (
 var blockDiscoverMutex sync.Mutex
 var transactionSubmitMutex sync.Mutex
 
-func GetBlockDiscover(p2p interfacev2.P2PManager, blockchain interfacev2.BlockChain, peer interfacev2.P2PMsgPeer, msgbody []byte) {
+func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	blockDiscoverMutex.Lock()
 	defer blockDiscoverMutex.Unlock()
 
@@ -44,7 +44,7 @@ func GetBlockDiscover(p2p interfacev2.P2PManager, blockchain interfacev2.BlockCh
 	//fmt.Println("GetBlockDiscover", 4)
 	//fmt.Println("get: MrklRoot", block.GetMrklRoot().ToHex(), hex.EncodeToString(msgbody), msgbody)
 	// check lastest block
-	lastest, e4 := blockchain.StateRead().ReadLastestBlockHeadMetaForRead()
+	lastest, immblk, e4 := blockchain.GetChainEngineKernel().LatestBlock()
 	if e4 != nil {
 		return // errro end
 	}
@@ -52,7 +52,8 @@ func GetBlockDiscover(p2p interfacev2.P2PManager, blockchain interfacev2.BlockCh
 	if block.GetHeight() > mylastblockheight+1 {
 		fmt.Printf("need height %d but got %d, sync the new blocks ...\n", mylastblockheight+1, block.GetHeight())
 		// check hash fork
-		msgParseSendRequestBlockHashList(peer, 8, mylastblockheight)
+		// 从我的成熟区块高度开始同步
+		msgParseSendRequestBlockHashList(peer, 8, immblk.GetHeight())
 		return
 	} else if block.GetHeight() < mylastblockheight+1 {
 		peer.Disconnect()
@@ -64,7 +65,7 @@ func GetBlockDiscover(p2p interfacev2.P2PManager, blockchain interfacev2.BlockCh
 		block.GetHeight(), block.GetCustomerTransactionCount(), block.Hash().ToHex(),
 		time.Unix(int64(block.GetTimestamp()), 0).Format(time_format_layout))
 	// do insert
-	err := blockchain.InsertBlock(block, "discover")
+	err := blockchain.GetChainEngineKernel().InsertBlock(block.(interfaces.Block), "discover")
 	if err == nil {
 		fmt.Printf("ok.\n")
 	} else {
@@ -73,7 +74,7 @@ func GetBlockDiscover(p2p interfacev2.P2PManager, blockchain interfacev2.BlockCh
 	}
 }
 
-func GetTransactionSubmit(p2p interfacev2.P2PManager, pool interfacev2.TxPool, peer interfacev2.P2PMsgPeer, msgbody []byte) {
+func GetTransactionSubmit(p2p interfaces.P2PManager, pool interfaces.TxPool, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	transactionSubmitMutex.Lock()
 	defer transactionSubmitMutex.Unlock()
 
@@ -91,5 +92,5 @@ func GetTransactionSubmit(p2p interfacev2.P2PManager, pool interfacev2.TxPool, p
 	peer.AddKnowledge("tx", txhxstr)
 
 	//fmt.Println("GetTransactionSubmit to Add Txpool:", tx.Hash().ToHex())
-	pool.AddTx(tx)
+	pool.AddTx(tx.(interfaces.Transaction))
 }

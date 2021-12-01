@@ -3,14 +3,13 @@ package handler
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
-	"github.com/hacash/core/interfacev2"
+	"github.com/hacash/core/interfaces"
 	"sync"
 )
 
 var sendBlockHashListMutex sync.Mutex
 
-func SendBlockHashList(blockchain interfacev2.BlockChain, peer interfacev2.P2PMsgPeer, msgbody []byte) {
+func SendBlockHashList(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	if len(msgbody) != 1+8 {
 		return // error len
 	}
@@ -23,7 +22,7 @@ func SendBlockHashList(blockchain interfacev2.BlockChain, peer interfacev2.P2PMs
 	defer sendBlockHashListMutex.Unlock()
 
 	reqlastheight := binary.BigEndian.Uint64(msgbody[1:])
-	mylastblk, err := blockchain.StateRead().ReadLastestBlockHeadMetaForRead()
+	mylastblk, _, err := blockchain.GetChainEngineKernel().LatestBlock()
 	if err != nil {
 		return
 	}
@@ -31,7 +30,7 @@ func SendBlockHashList(blockchain interfacev2.BlockChain, peer interfacev2.P2PMs
 		return // not find this block
 	}
 	// read from store
-	blockstore := blockchain.StateRead().BlockStoreRead()
+	blockstore := blockchain.GetChainEngineKernel().StateRead().BlockStoreRead()
 	resdatas := bytes.NewBuffer(msgbody[1:])
 	for curhei := reqlastheight; curhei > 0 && curhei >= reqlastheight-reqnum; curhei-- {
 		// read blk hash
@@ -45,12 +44,12 @@ func SendBlockHashList(blockchain interfacev2.BlockChain, peer interfacev2.P2PMs
 	peer.SendDataMsg(MsgTypeBlockHashList, resdatas.Bytes())
 }
 
-func GetBlockHashList(blockchain interfacev2.BlockChain, peer interfacev2.P2PMsgPeer, msgbody []byte) {
+func GetBlockHashList(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	if len(msgbody) < 8 {
 		return // error len
 	}
 	lastestHeight := binary.BigEndian.Uint64(msgbody[0:8])
-	mylastblk, err := blockchain.StateRead().ReadLastestBlockHeadMetaForRead()
+	mylastblk, _, err := blockchain.GetChainEngineKernel().LatestBlock()
 	if err != nil {
 		return
 	}
@@ -72,7 +71,7 @@ func GetBlockHashList(blockchain interfacev2.BlockChain, peer interfacev2.P2PMsg
 	smallHei := lastestHeight - hashnum
 	rollbackToHeight := uint64(0)
 	// read my block hash
-	blockstore := blockchain.StateRead().BlockStoreRead()
+	blockstore := blockchain.GetChainEngineKernel().StateRead().BlockStoreRead()
 	i := 0
 	for curhei := bigHei; curhei > smallHei; curhei-- {
 		myheihash, e := blockstore.ReadBlockHashByHeight(curhei)
@@ -94,13 +93,16 @@ func GetBlockHashList(blockchain interfacev2.BlockChain, peer interfacev2.P2PMsg
 	}
 
 	if rollbackToHeight > 0 {
-		curhei, err := blockchain.RollbackToBlockHeight(rollbackToHeight)
-		if err != nil {
-			fmt.Println("RollbackToBlockHeight error", err)
-			return
-		}
-		// get block data
-		msgParseSendRequestBlocks(peer, curhei+1)
+		/*
+			curhei, err := blockchain.RollbackToBlockHeight(rollbackToHeight)
+			if err != nil {
+				fmt.Println("RollbackToBlockHeight error", err)
+				return
+			}
+			// get block data
+			msgParseSendRequestBlocks(peer, curhei+1)
+			// do not RollbackToBlockHeight
+		*/
 		return
 	}
 

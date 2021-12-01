@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/hacash/core/blocks"
-	"github.com/hacash/core/interfacev2"
+	"github.com/hacash/core/interfaces"
 	"github.com/hacash/mint"
 	"github.com/hacash/node/websocket"
 	"strconv"
@@ -22,7 +22,7 @@ func (h *Backend) SyncBlockFromWebSocketApi(ws_url string) error {
 		return e2
 	}
 
-	curblk, err := h.blockchain.StateRead().ReadLastestBlockHeadMetaForRead()
+	curblk, _, err := h.blockchain.GetChainEngineKernel().LatestBlock()
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ READBUFSEG:
 		return fmt.Errorf("target block height must %d but got %d.", target_height, tarblk.GetHeight())
 	}
 	// insert block
-	e4 := h.blockchain.InsertBlock(tarblk, "discover")
+	e4 := h.blockchain.GetChainEngineKernel().InsertBlock(tarblk.(interfaces.Block), "discover")
 	if e4 != nil {
 		return e4
 	}
@@ -138,7 +138,7 @@ func (h *Backend) DownloadBlocksDataFromWebSocketApi(ws_url string, start_height
 	return start_block_height, nil
 }
 
-func newBlocksDataArrive(blockchain interfacev2.BlockChain, datas []byte) (uint64, error) {
+func newBlocksDataArrive(blockchain interfaces.BlockChain, datas []byte) (uint64, error) {
 
 	start_block_height := uint64(0)
 
@@ -156,7 +156,7 @@ func newBlocksDataArrive(blockchain interfacev2.BlockChain, datas []byte) (uint6
 		//fmt.Println(newblock.GetHeight())
 		seek = sk
 		// do store
-		err := blockchain.InsertBlock(newblock, "sync")
+		err := blockchain.GetChainEngineKernel().InsertBlock(newblock.(interfaces.Block), "sync")
 		if err != nil {
 			return 0, err
 		}

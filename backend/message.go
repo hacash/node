@@ -1,13 +1,13 @@
 package backend
 
 import (
-	"github.com/hacash/core/interfacev2"
+	"github.com/hacash/core/interfaces"
 	"github.com/hacash/node/handler"
 	"time"
 )
 
 // OnConnected
-func (hn *Backend) OnConnected(msghandler interfacev2.P2PMsgCommunicator, peer interfacev2.P2PMsgPeer) {
+func (hn *Backend) OnConnected(msghandler interfaces.P2PMsgCommunicator, peer interfaces.P2PMsgPeer) {
 
 	//fmt.Println("-8-8-8-8-8-8-8-8-88-************ (hn *Backend) OnConnected: ", peer.Describe())
 
@@ -24,12 +24,12 @@ func (hn *Backend) OnConnected(msghandler interfacev2.P2PMsgCommunicator, peer i
 }
 
 // OnDisconnected
-func (hn *Backend) OnDisconnected(peer interfacev2.P2PMsgPeer) {
+func (hn *Backend) OnDisconnected(peer interfaces.P2PMsgPeer) {
 
 }
 
 // OnConnected
-func (hn *Backend) OnMsgData(cmtr interfacev2.P2PMsgCommunicator, peer interfacev2.P2PMsgPeer, msgty uint16, msgbody []byte) {
+func (hn *Backend) OnMsgData(cmtr interfaces.P2PMsgCommunicator, peer interfaces.P2PMsgPeer, msgty uint16, msgbody []byte) {
 
 	//fmt.Println("OnMsgData", peer.Describe(), msgty, msgbody)
 

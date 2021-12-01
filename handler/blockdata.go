@@ -5,13 +5,13 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/hacash/core/blocks"
-	"github.com/hacash/core/interfacev2"
+	"github.com/hacash/core/interfaces"
 	"sync"
 )
 
 var sendBlockDataMutex sync.Mutex
 
-func GetBlocksData(p2p interfacev2.P2PManager, cmtr interfacev2.P2PMsgCommunicator, blockchain interfacev2.BlockChain, peer interfacev2.P2PMsgPeer, msgbody []byte) {
+func GetBlocksData(p2p interfaces.P2PManager, cmtr interfaces.P2PMsgCommunicator, blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	if len(msgbody) < 3*8 {
 		return
 	}
@@ -40,7 +40,7 @@ func GetBlocksData(p2p interfacev2.P2PManager, cmtr interfacev2.P2PMsgCommunicat
 		}
 		seek = sk
 		// append
-		insert_error := blockchain.InsertBlock(oneblock, "sync")
+		insert_error := blockchain.GetChainEngineKernel().InsertBlock(oneblock.(interfaces.Block), "sync")
 		if insert_error != nil {
 			fmt.Println("[Error] GetBlocksData to InsertBlock:", insert_error)
 			return
@@ -68,7 +68,7 @@ func GetBlocksData(p2p interfacev2.P2PManager, cmtr interfacev2.P2PMsgCommunicat
 	msgParseSendRequestBlocks(peer, endHeight+1)
 }
 
-func SendBlocksData(blockchain interfacev2.BlockChain, peer interfacev2.P2PMsgPeer, msgbody []byte) {
+func SendBlocksData(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	sendBlockDataMutex.Lock()
 	defer sendBlockDataMutex.Unlock()
 
@@ -76,11 +76,11 @@ func SendBlocksData(blockchain interfacev2.BlockChain, peer interfacev2.P2PMsgPe
 	if len(msgbody) != 8 {
 		return
 	}
-	mylastblock, err := blockchain.StateRead().ReadLastestBlockHeadMetaForRead()
+	mylastblock, _, err := blockchain.GetChainEngineKernel().LatestBlock()
 	if err != nil {
 		return
 	}
-	blockstore := blockchain.StateRead().BlockStoreRead()
+	blockstore := blockchain.GetChainEngineKernel().StateRead().BlockStoreRead()
 	lastestHeight := mylastblock.GetHeight()
 	startHeight := binary.BigEndian.Uint64(msgbody)
 	endHeight := uint64(0)

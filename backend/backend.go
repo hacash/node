@@ -2,7 +2,7 @@ package backend
 
 import (
 	"fmt"
-	"github.com/hacash/core/interfacev2"
+	"github.com/hacash/core/interfaces"
 	"github.com/hacash/mint/blockchain"
 	"github.com/hacash/mint/blockchainv3"
 	"github.com/hacash/node/p2pv2"
@@ -13,15 +13,15 @@ import (
 type Backend struct {
 	config *BackendConfig
 
-	p2p        interfacev2.P2PManager
-	msghandler interfacev2.P2PMsgCommunicator
+	p2p        interfaces.P2PManager
+	msghandler interfaces.P2PMsgCommunicator
 
-	txpool interfacev2.TxPool
+	txpool interfaces.TxPool
 
-	addTxToPoolSuccessCh      chan interfacev2.Transaction
-	discoverNewBlockSuccessCh chan interfacev2.Block
+	addTxToPoolSuccessCh      chan interfaces.Transaction
+	discoverNewBlockSuccessCh chan interfaces.Block
 
-	blockchain interfacev2.BlockChain
+	blockchain interfaces.BlockChain
 
 	msgFlowLock sync.Mutex
 }
@@ -33,8 +33,8 @@ func NewBackend(config *BackendConfig) (*Backend, error) {
 	backend := &Backend{
 		config:                    config,
 		msghandler:                nil,
-		addTxToPoolSuccessCh:      make(chan interfacev2.Transaction, 5),
-		discoverNewBlockSuccessCh: make(chan interfacev2.Block, 5),
+		addTxToPoolSuccessCh:      make(chan interfaces.Transaction, 5),
+		discoverNewBlockSuccessCh: make(chan interfaces.Block, 5),
 	}
 
 	// p2p
@@ -44,7 +44,7 @@ func NewBackend(config *BackendConfig) (*Backend, error) {
 	p2pmng.SetMsgHandler(backend) // handle msg
 
 	// blockchain
-	var blockchainObj interfacev2.BlockChain = nil
+	var blockchainObj interfaces.BlockChain = nil
 	if config.UseBlockChainV3 {
 		// use v3
 		bccnf := blockchainv3.NewBlockChainConfig(config.cnffile)
@@ -61,7 +61,7 @@ func NewBackend(config *BackendConfig) (*Backend, error) {
 	backend.blockchain = blockchainObj
 
 	// insert block success
-	blockchainObj.SubscribeValidatedBlockOnInsert(backend.discoverNewBlockSuccessCh)
+	blockchainObj.GetChainEngineKernel().SubscribeValidatedBlockOnInsert(backend.discoverNewBlockSuccessCh)
 
 	// return
 	return backend, nil
@@ -87,12 +87,12 @@ func (hn *Backend) Start() error {
 }
 
 //
-func (hn *Backend) BlockChain() interfacev2.BlockChain {
+func (hn *Backend) BlockChain() interfaces.BlockChain {
 	return hn.blockchain
 }
 
 // set
-func (hn *Backend) SetTxPool(pool interfacev2.TxPool) {
+func (hn *Backend) SetTxPool(pool interfaces.TxPool) {
 	hn.txpool = pool
 	// add tx feed
 	pool.SubscribeOnAddTxSuccess(hn.addTxToPoolSuccessCh)

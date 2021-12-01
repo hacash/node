@@ -6,7 +6,7 @@ import (
 	"github.com/hacash/core/blocks"
 	"github.com/hacash/core/fields"
 	"github.com/hacash/core/genesis"
-	"github.com/hacash/core/interfacev2"
+	"github.com/hacash/core/interfaces"
 )
 
 const (
@@ -65,9 +65,9 @@ func (this *HandShakeStatusData) Parse(buf []byte, seek uint32) (uint32, error) 
 
 ////////////////////////////////////////////////////////
 
-func SendStatusToPeer(blockchain interfacev2.BlockChain, peer interfacev2.P2PMsgPeer) {
+func SendStatusToPeer(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer) {
 
-	lastblock, err := blockchain.StateRead().ReadLastestBlockHeadMetaForRead()
+	lastblock, _, err := blockchain.GetChainEngineKernel().LatestBlock()
 	if err != nil {
 		panic(err)
 	}
@@ -87,7 +87,7 @@ func SendStatusToPeer(blockchain interfacev2.BlockChain, peer interfacev2.P2PMsg
 	peer.SendDataMsg(MsgTypeStatus, msgdata)
 }
 
-func GetStatus(blockchain interfacev2.BlockChain, peer interfacev2.P2PMsgPeer, msgbody []byte) {
+func GetStatus(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 
 	if len(msgbody) != HandShakeStatusDataSize {
 		peer.Disconnect()
@@ -118,7 +118,7 @@ func GetStatus(blockchain interfacev2.BlockChain, peer interfacev2.P2PMsgPeer, m
 		return
 	}
 	// my state
-	lastblock, err := blockchain.StateRead().ReadLastestBlockHeadMetaForRead()
+	lastblock, _, err := blockchain.GetChainEngineKernel().LatestBlock()
 	if err != nil {
 		panic(err)
 	}
