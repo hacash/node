@@ -44,7 +44,7 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 
 	case P2PMsgTypePing:
 		// ping pong
-		sendTcpMsg(conn, P2PMsgTypePong, nil)
+		go sendTcpMsg(conn, P2PMsgTypePong, nil)
 		break
 
 	case P2PMsgTypePong:
@@ -97,7 +97,7 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 		// 通知连接成功
 		peer.notifyConnect()
 		// 通知对方为公网节点
-		sendTcpMsg(conn, P2PMsgTypeRemindMeIsPublicPeer, nil)
+		go sendTcpMsg(conn, P2PMsgTypeRemindMeIsPublicPeer, nil)
 		// 判断是否需要执行第一次查找节点
 		p.PeerChangeMux.RLock()
 		var backbonetablelen = len(p.BackboneNodeTable)
@@ -203,7 +203,7 @@ func (p *P2P) handleConnMsg(connid uint64, conn net.Conn, peer *Peer, msg []byte
 					peer.PublicIpPort = tcp // 写入公网节点
 					newPeerIsBackboneNode = true
 					// 通知对方为公网节点
-					sendTcpMsg(conn, P2PMsgTypeRemindMeIsPublicPeer, nil)
+					go sendTcpMsg(conn, P2PMsgTypeRemindMeIsPublicPeer, nil)
 				}
 			}
 			isclosed = true

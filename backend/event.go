@@ -16,6 +16,11 @@ func (hn *Backend) broadcastNewBlockDiscover(block interfacev2.Block) {
 	//fmt.Println("broadcastNewBlockDiscover:", 2)
 	blkhxstr := string(block.Hash())
 	//fmt.Println("broadcastNewBlockDiscover:", 3)
+	if hn.p2p.CheckKnowledge("block", blkhxstr) {
+		// 来自 discover 的区块已经添加知识并且广播
+		// 此处仅仅广播我挖出的区块
+		return
+	}
 	hn.p2p.AddKnowledge("block", blkhxstr)
 	// send
 	blockdata, e1 := block.Serialize()

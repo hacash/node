@@ -17,7 +17,7 @@ const (
 var blockDiscoverMutex sync.Mutex
 var transactionSubmitMutex sync.Mutex
 
-func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
+func GetBlockDiscover(p2p interfaces.P2PManager, msgcator interfaces.P2PMsgCommunicator, blockchain interfaces.BlockChain, peer interfaces.P2PMsgPeer, msgbody []byte) {
 	blockDiscoverMutex.Lock()
 	defer blockDiscoverMutex.Unlock()
 
@@ -33,6 +33,7 @@ func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChai
 		return // 已经收到区块
 	}
 	//fmt.Println("GetBlockDiscover", 3)
+	// 添加知晓区块，在“插入区块成功”的事件处就不重复广播了
 	p2p.AddKnowledge("block", blockhxstr)
 	peer.AddKnowledge("block", blockhxstr)
 	// 解析完整区块
@@ -68,6 +69,8 @@ func GetBlockDiscover(p2p interfaces.P2PManager, blockchain interfaces.BlockChai
 	err := blockchain.GetChainEngineKernel().InsertBlock(block.(interfaces.Block), "discover")
 	if err == nil {
 		fmt.Printf("ok.\n")
+		// 插入成功，无论是否为分叉块，都以最快的速度广播区块出去
+		msgcator.BroadcastDataMessageToUnawarePeers(MsgTypeDiscoverNewBlock, msgbody, "block", blockhxstr)
 	} else {
 		//fmt.Printf("\n\n---------------\n-- %s\n---------------\n\n", err.Error())
 		fmt.Println("\n" + err.Error() + "\n")

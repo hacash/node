@@ -7,7 +7,7 @@ import (
 type BackendConfig struct {
 	cnffile *sys.Inicnf
 
-	UseBlockChainV3 bool
+	UseBlockChainV2 bool
 
 	Datadir string
 }
@@ -24,7 +24,7 @@ func NewBackendConfig(cnffile *sys.Inicnf) *BackendConfig {
 	cnf.Datadir = cnffile.MustDataDirWithVersion()
 
 	sec := cnffile.Section("")
-	cnf.UseBlockChainV3 = sec.Key("UseBlockChainV3").MustBool(false)
+	cnf.UseBlockChainV2 = sec.Key("UseBlockChainV2").MustBool(false)
 
 	return cnf
 }

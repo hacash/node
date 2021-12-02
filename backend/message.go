@@ -70,7 +70,7 @@ func (hn *Backend) OnMsgData(cmtr interfaces.P2PMsgCommunicator, peer interfaces
 
 	if msgty == handler.MsgTypeDiscoverNewBlock {
 		//fmt.Println("msgty == handler.MsgTypeDiscoverNewBlock:", peer.Describe())
-		handler.GetBlockDiscover(hn.p2p, hn.blockchain, peer, msgbody)
+		handler.GetBlockDiscover(hn.p2p, hn.msghandler, hn.blockchain, peer, msgbody)
 		return
 	}
 

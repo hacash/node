@@ -58,7 +58,7 @@ func (p *P2P) loop() {
 					// 超过5分钟没有活跃的节点
 					p.PeerChangeMux.RLock()
 					if peer.activeTime.Add(time.Minute * 5).Before(ct) {
-						sendTcpMsg(peer.conn, P2PMsgTypePing, nil) // send ping
+						go sendTcpMsg(peer.conn, P2PMsgTypePing, nil) // send ping
 					}
 					p.PeerChangeMux.RUnlock()
 				}

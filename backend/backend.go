@@ -45,14 +45,14 @@ func NewBackend(config *BackendConfig) (*Backend, error) {
 
 	// blockchain
 	var blockchainObj interfaces.BlockChain = nil
-	if config.UseBlockChainV3 {
-		// use v3
-		bccnf := blockchainv3.NewBlockChainConfig(config.cnffile)
-		blockchainObj, e = blockchainv3.NewBlockChain(bccnf)
-	} else {
+	if config.UseBlockChainV2 {
 		// use v2
 		bccnf := blockchain.NewBlockChainConfig(config.cnffile)
 		blockchainObj, e = blockchain.NewBlockChain(bccnf)
+	} else {
+		// use v3
+		bccnf := blockchainv3.NewBlockChainConfig(config.cnffile)
+		blockchainObj, e = blockchainv3.NewBlockChain(bccnf)
 	}
 	if e != nil {
 		fmt.Println("blockchain.NewBlockChain Error", e)
