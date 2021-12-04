@@ -5,6 +5,7 @@ import (
 	"github.com/hacash/core/blocks"
 	"github.com/hacash/core/interfaces"
 	"github.com/hacash/core/transactions"
+	"github.com/hacash/mint/blockchainv3"
 	"sync"
 	"time"
 )
@@ -56,9 +57,10 @@ func GetBlockDiscover(p2p interfaces.P2PManager, msgcator interfaces.P2PMsgCommu
 		// 从我的成熟区块高度开始同步
 		msgParseSendRequestBlockHashList(peer, 8, immblk.GetHeight())
 		return
-	} else if block.GetHeight() < mylastblockheight+1 {
-		peer.Disconnect()
-		//fmt.Printf("need height %d but got %d, ignore.\n", mylastblockheight+1, block.GetHeight())
+	} else if block.GetHeight() <= mylastblockheight-blockchainv3.ImmatureBlockMaxLength {
+		//peer.Disconnect()
+		// 不接受低于或等于已成熟确认的区块高度数据
+		fmt.Printf("need height %d but got %d, ignore.\n", mylastblockheight+1, block.GetHeight())
 		return // error block height
 	}
 	// note
@@ -66,7 +68,10 @@ func GetBlockDiscover(p2p interfaces.P2PManager, msgcator interfaces.P2PMsgCommu
 		block.GetHeight(), block.GetCustomerTransactionCount(), block.Hash().ToHex(),
 		time.Unix(int64(block.GetTimestamp()), 0).Format(time_format_layout))
 	// do insert
+	//testInsertTimeStart := time.Now()
 	err := blockchain.GetChainEngineKernel().InsertBlock(block.(interfaces.Block), "discover")
+	//testInsertTimeEnd := time.Now()
+	//fmt.Println("insert time millisecond: ", testInsertTimeEnd.Sub(testInsertTimeStart ).Milliseconds())
 	if err == nil {
 		fmt.Printf("ok.\n")
 		// 插入成功，无论是否为分叉块，都以最快的速度广播区块出去
