@@ -31,7 +31,7 @@ func GetBlocksData(p2p interfaces.P2PManager, cmtr interfaces.P2PMsgCommunicator
 		}
 		oneblock, sk, err := blocks.ParseBlock(allBlockDatas, seek)
 		if err != nil || oneblock == nil {
-			fmt.Println(err, "blocks.ParseBlock Error")
+			fmt.Println("blocks.ParseBlock Error: ", err)
 			return // block data error
 		}
 		if seek == 0 && startHeight != oneblock.GetHeight() {

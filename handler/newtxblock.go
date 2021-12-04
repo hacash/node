@@ -55,7 +55,8 @@ func GetBlockDiscover(p2p interfaces.P2PManager, msgcator interfaces.P2PMsgCommu
 		fmt.Printf("need height %d but got %d, sync the new blocks ...\n", mylastblockheight+1, block.GetHeight())
 		// check hash fork
 		// 从我的成熟区块高度开始同步
-		msgParseSendRequestBlockHashList(peer, 8, immblk.GetHeight())
+		msgParseSendRequestBlocks(peer, immblk.GetHeight()+1)
+		//msgParseSendRequestBlockHashList(peer, 8, immblk.GetHeight())
 		return
 	} else if block.GetHeight() <= mylastblockheight-blockchainv3.ImmatureBlockMaxLength {
 		//peer.Disconnect()
