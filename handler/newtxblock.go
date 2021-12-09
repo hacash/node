@@ -70,7 +70,7 @@ func GetBlockDiscover(p2p interfaces.P2PManager, msgcator interfaces.P2PMsgCommu
 		time.Unix(int64(block.GetTimestamp()), 0).Format(time_format_layout))
 	// do insert
 	//testInsertTimeStart := time.Now()
-	err := blockchain.GetChainEngineKernel().InsertBlock(block.(interfaces.Block), "discover")
+	err := blockchain.GetChainEngineKernel().InsertBlock(block, "discover")
 	//testInsertTimeEnd := time.Now()
 	//fmt.Println("insert time millisecond: ", testInsertTimeEnd.Sub(testInsertTimeStart ).Milliseconds())
 	if err == nil {

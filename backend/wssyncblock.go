@@ -1,17 +1,7 @@
 package backend
 
-import (
-	"bytes"
-	"encoding/binary"
-	"fmt"
-	"github.com/hacash/core/blocks"
-	"github.com/hacash/core/interfaces"
-	"github.com/hacash/mint"
-	"github.com/hacash/node/websocket"
-	"strconv"
-)
-
 // download block data form ws api
+/*
 func (h *Backend) SyncBlockFromWebSocketApi(ws_url string) error {
 
 	// websocket
@@ -74,8 +64,10 @@ READBUFSEG:
 
 	return nil
 }
+*/
 
 // download block data form ws api
+/*
 func (h *Backend) DownloadBlocksDataFromWebSocketApi(ws_url string, start_height uint64) (uint64, error) {
 
 	// websocket
@@ -137,7 +129,9 @@ func (h *Backend) DownloadBlocksDataFromWebSocketApi(ws_url string, start_height
 
 	return start_block_height, nil
 }
+*/
 
+/*
 func newBlocksDataArrive(blockchain interfaces.BlockChain, datas []byte) (uint64, error) {
 
 	start_block_height := uint64(0)
@@ -162,12 +156,13 @@ func newBlocksDataArrive(blockchain interfaces.BlockChain, datas []byte) (uint64
 		}
 		start_block_height = newblock.GetHeight() + 1
 
-		/************* test *************/
+		//************* test *************
 		if start_block_height == 5 {
 			//return 0, fmt.Errorf("ok 5 blocks")
 		}
-		/*********** test end **********/
+		//*********** test end **********
 	}
 	// ok
 	return start_block_height, nil
 }
+*/

@@ -40,7 +40,7 @@ func GetBlocksData(p2p interfaces.P2PManager, cmtr interfaces.P2PMsgCommunicator
 		}
 		seek = sk
 		// append
-		insert_error := blockchain.GetChainEngineKernel().InsertBlock(oneblock.(interfaces.Block), "sync")
+		insert_error := blockchain.GetChainEngineKernel().InsertBlock(oneblock, "sync")
 		if insert_error != nil {
 			fmt.Println("[Error] GetBlocksData to InsertBlock:", insert_error)
 			return
