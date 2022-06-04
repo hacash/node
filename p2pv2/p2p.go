@@ -11,9 +11,9 @@ type P2P struct {
 
 	msgHandler interfaces.P2PMsgDataHandler
 
-	BackboneNodeTable    []PeerID // 公网节点
-	OrdinaryNodeTable    []PeerID // 私网节点
-	UnfamiliarNodesTable []PeerID // 临时节点
+	BackboneNodeTable    []PeerID // Public network node
+	OrdinaryNodeTable    []PeerID // Private network node
+	UnfamiliarNodesTable []PeerID // Temporary node
 
 	AllNodesLen int
 	AllNodes    sync.Map //       [string]*Peer // 全部节点池
@@ -25,9 +25,9 @@ type P2P struct {
 
 	// my peer
 	peerSelf           *Peer
-	MyselfIsPublicPeer bool // 我自己是不是公网节点
+	MyselfIsPublicPeer bool // Am I a public network node
 
-	// 状态
+	// state
 	isInFindingNode uint32
 }
 

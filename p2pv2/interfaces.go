@@ -18,12 +18,12 @@ func (p *P2P) Start() error {
 	return p.doStart()
 }
 
-// 返回 false 为已经知晓
+// Return false as known
 func (p *P2P) AddKnowledge(KnowledgeKind string, KnowledgeKey string) bool {
 	return p.peerSelf.AddKnowledge(KnowledgeKind, KnowledgeKey)
 }
 
-// 返回 true 为已经知晓
+// Return true to know
 func (p *P2P) CheckKnowledge(KnowledgeKind string, KnowledgeKey string) bool {
 	return p.peerSelf.CheckKnowledge(KnowledgeKind, KnowledgeKey)
 }
@@ -79,11 +79,11 @@ func (p *P2P) FindAnyOnePeerBetterBePublic() interfaces.P2PMsgPeer {
 	if tarnode == nil {
 		p.AllNodes.Range(func(key, value interface{}) bool {
 			peer := value.(*Peer)
-			tarnode = peer // 随机取一个
+			tarnode = peer // Take one at random
 			return false
 		})
 	}
-	// 返回
+	// return
 	return tarnode
 }
 
@@ -111,7 +111,7 @@ func (p *Peer) Describe() string {
 	return des
 }
 
-// 返回 false 为已经知晓
+// Return false as known
 func (p *Peer) AddKnowledge(KnowledgeKind string, KnowledgeKey string) bool {
 	knval := mapset.NewSet()
 	if actual, ldok := p.knownPeerKnowledgeDuplicateRemoval.LoadOrStore(KnowledgeKind, knval); ldok {

@@ -27,12 +27,12 @@ func (p *P2P) listen(port int) error {
 				break
 			}
 			//fmt.Println(conn.RemoteAddr())
-			// 执行握手
+			// Perform handshake
 			e1 := doTcpMsgHandshakeSignalIfErrorClose(conn, time.Second*10)
 			if e1 != nil {
 				continue
 			}
-			// 处理消息
+			// Processing messages
 			go p.handleNewConn(conn, nil)
 		}
 	}()

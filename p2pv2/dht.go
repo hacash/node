@@ -4,7 +4,7 @@ import (
 	"bytes"
 )
 
-// 从表中移除一个
+// Remove a from the table
 func removePeerIDFromTable(idtables []PeerID, rmid PeerID) (bool, []PeerID) {
 	rmidx := -1
 	for i, v := range idtables {
@@ -37,19 +37,19 @@ func removePeerIDFromTable(idtables []PeerID, rmid PeerID) (bool, []PeerID) {
 func isCanUpdateTopologyDistancePeerIDTable(ori PeerID, insert PeerID, idtables []PeerID, tablesizemax int) bool {
 	rlnum := len(idtables)
 	if tablesizemax <= 0 {
-		return false // 表空间为零，无法更新
+		return false // Tablespace is zero and cannot be updated
 	}
 	if rlnum < tablesizemax {
-		return true // 空表或数量未满，可以更新
+		return true // Empty table or quantity not full, can be updated
 	}
-	// 表中第一个判断比较
+	// First judgment comparison in the table
 	lastp := idtables[0]
 	dsv := compareTopologyDistanceForPeerID(ori, insert, lastp)
 	if dsv == 1 {
-		// insert 的关系更近，可以更新
-		return true // 空表或数量未满，可以更新
+		// The insert relationship is closer and can be updated
+		return true // Empty table or quantity not full, can be updated
 	}
-	// 亲缘关系不够，不能更新
+	// Insufficient kinship, unable to update
 	return false
 }
 
@@ -64,7 +64,7 @@ func insertUpdateTopologyDistancePeerIDTable(ori PeerID, insert PeerID, idtables
 	insertIdx = -1
 	tables = nil
 	dropid = nil
-	// 全新添加
+	// New addition
 	tblen := len(idtables)
 	if tblen == 0 {
 		tables = []PeerID{insert}
@@ -108,7 +108,7 @@ func insertUpdateTopologyDistancePeerIDTable(ori PeerID, insert PeerID, idtables
 		tables = tables[0 : ntblen-1]
 	}
 	if bytes.Compare(dropid, insert) == 0 {
-		// 末尾的那个
+		// The one at the end
 		inserted = false
 		insertIdx = -1
 	}
@@ -147,7 +147,7 @@ func compareTopologyDistanceForPeerID(ori, left, right []byte) int {
 	return 0
 }
 
-// 计算距离值
+// Calculate distance value
 func calculateOneByteTopologyDistanceValue(dst, src byte) uint8 {
 	if dst == src {
 		return 0
@@ -161,7 +161,7 @@ func calculateOneByteTopologyDistanceValue(dst, src byte) uint8 {
 	} else {
 		bt, st = src, dst
 	}
-	// 距离
+	// distance
 	disv := int(bt - st)
 	if disv > 128 {
 		disv = 256 - disv

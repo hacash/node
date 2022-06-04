@@ -13,7 +13,7 @@ import (
  */
 func dialTimeoutWithHandshakeSignal(network, address string, timeout time.Duration) (net.Conn, error) {
 
-	// 拨号连接
+	// Dial up connection
 	//fmt.Println("DialTimeout", address, timeout)
 	conn, e0 := net.DialTimeout(network, address, timeout)
 	//fmt.Println("DialTimeout", address, "return", conn, e0)
@@ -21,7 +21,7 @@ func dialTimeoutWithHandshakeSignal(network, address string, timeout time.Durati
 		return nil, e0
 	}
 
-	// 执行握手
+	// Perform handshake
 	e1 := doTcpMsgHandshakeSignalIfErrorClose(conn, time.Second*10)
 	if e1 != nil {
 		return nil, e1
@@ -40,7 +40,7 @@ func doTcpMsgHandshakeSignalIfErrorClose(conn net.Conn, timeout time.Duration) e
 	reterrCh := make(chan error, 1)
 
 	go func() {
-		// 发送握手信号
+		// Send handshake signal
 		e1 := sendTcpMsgHandshakeSignal(conn)
 		if e1 != nil {
 			conn.Close()
@@ -48,7 +48,7 @@ func doTcpMsgHandshakeSignalIfErrorClose(conn net.Conn, timeout time.Duration) e
 			return
 		}
 
-		// 收到握手信号
+		// Handshake signal received
 		hdsksgl := make([]byte, 4)
 		_, e2 := io.ReadFull(conn, hdsksgl)
 		if e2 != nil {
@@ -86,7 +86,7 @@ func doTcpMsgHandshakeSignalIfErrorClose(conn net.Conn, timeout time.Duration) e
  */
 func sendTcpMsgHandshakeSignal(conn net.Conn) error {
 
-	// 发送握手信号
+	// Send handshake signal
 	hdsksglbts := make([]byte, 4)
 	binary.BigEndian.PutUint32(hdsksglbts, P2PHandshakeSignal)
 	_, e1 := conn.Write(hdsksglbts)

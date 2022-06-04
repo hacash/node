@@ -22,14 +22,14 @@ func (p *P2P) ConnectNodeInitiative(addr *net.TCPAddr) (net.Conn, error) {
 		return nil, e0
 	}
 
-	// 自动为公网节点
+	// Automatic public network node
 	peer := NewEmptyPeer(p, p.msgHandler)
 	peer.PublicIpPort = addr
 
-	// 处理消息
+	// Processing messages
 	go p.handleNewConn(conn, peer)
 
-	// 发送请求加入 peer 消息
+	// Send a request to join peer message
 	portbts := make([]byte, 4)
 	binary.BigEndian.PutUint32(portbts, uint32(p.Config.TCPListenPort))
 	idbuf := bytes.NewBuffer(portbts)
@@ -41,7 +41,7 @@ func (p *P2P) ConnectNodeInitiative(addr *net.TCPAddr) (net.Conn, error) {
 		return nil, e2
 	}
 
-	// 成功返回
+	// Successful return
 	return conn, nil
 
 }

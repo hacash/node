@@ -1,8 +1,8 @@
 package p2pv2
 
 const (
-	P2PHandshakeSignal uint32 = 3418609257               // 固定不变的信号值
-	P2PMsgDataMaxSize  uint32 = uint32(10) * 1024 * 1024 // 单条消息最大长度 10 MB
+	P2PHandshakeSignal uint32 = 3418609257               // Fixed signal value
+	P2PMsgDataMaxSize  uint32 = uint32(10) * 1024 * 1024 // Maximum length of a single message 10 MB
 
 	PeerNameSize int = 16
 	PeerIDSize   int = 16
@@ -10,18 +10,18 @@ const (
 
 const (
 	// 请求/应答消息
-	P2PMsgTypeReportIdKeepConnectAsPeer uint8 = 1 // 报告我的 Port + PeerID + PeerName ，请求希望作为持久节点来连接
-	P2PMsgTypeAnswerIdKeepConnectAsPeer uint8 = 2 // 回复我的 PeerID + PeerName 同意作为持久连接
+	P2PMsgTypeReportIdKeepConnectAsPeer uint8 = 1 // Report my port + peerid + peername, and request that you want to connect as a persistent node
+	P2PMsgTypeAnswerIdKeepConnectAsPeer uint8 = 2 // Reply to my peerid + peername and agree to use it as a persistent connection
 	P2PMsgTypePing                      uint8 = 3 // ping
 	P2PMsgTypePong                      uint8 = 4 // pong
 
-	// 无需回复的消息
-	P2PMsgTypeRemindMeIsPublicPeer uint8 = 151 // 对方提示我自己是公网节点
+	// Message without reply
+	P2PMsgTypeRemindMeIsPublicPeer uint8 = 151 // The other party reminds me that I am a public network node
 
-	// 答复后立即断开连接的消息
-	P2PMsgTypeRequestIDForPublicNodeCheck uint8 = 201 // 对方询问我的 PeerID 用于判断是否为公网，答复后即可立即断开连接
-	P2PMsgTypeRequestNearestPublicNodes   uint8 = 202 // 对方请求公网节点列表(200以内)， 答复后可立即断开连接
+	// Message to disconnect immediately after reply
+	P2PMsgTypeRequestIDForPublicNodeCheck uint8 = 201 // My peerid is used to judge whether it is a public network. You can disconnect immediately after you reply
+	P2PMsgTypeRequestNearestPublicNodes   uint8 = 202 // The other party requests the public network node list (within 200), and can immediately disconnect after replying
 
-	// 客户上层消息
+	// Customer upper level message
 	P2PMsgTypeCustomer uint8 = 255
 )

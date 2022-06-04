@@ -136,7 +136,7 @@ var tag string
 const HAND_SHAKE_MSG = "im nat pass msg"
 
 func start_netpass_client(port int) {
-	// 当前进程标记字符串,便于显示
+	// Current process tag string for easy display
 	tag = os.Args[1]
 	srcAddr := &net.UDPAddr{IP: net.IPv4zero, Port: port} // 注意端口必须固定
 	dstAddr := &net.UDPAddr{IP: net.ParseIP("182.92.163.225"), Port: 9981}
@@ -158,13 +158,13 @@ func start_netpass_client(port int) {
 	anotherPeer, _ := net.ResolveUDPAddr("udp", string(data[:n]))
 	fmt.Printf("local:%s server:%s another:%s\n", srcAddr, remoteAddr, anotherPeer.String())
 
-	// 开始打洞
+	// Start drilling
 	//bidirectionHole(srcAddr, anotherPeer)
 	bidirectionHole_v2(conn, anotherPeer)
 }
 
 func bidirectionHole_v2(conn *net.UDPConn, anotherPeer *net.UDPAddr) {
-	// 向另一个peer发送一条udp消息(对方peer的nat设备会丢弃该消息,非法来源),用意是在自身的nat设备打开一条可进入的通道,这样对方peer就可以发过来udp消息
+	// Send a UDP message to another peer (the NAT device of the other peer will discard the message, which is an illegal source) to open an accessible channel in its own NAT device, so that the other peer can send UDP messages
 	if _, err := conn.WriteToUDP([]byte(HAND_SHAKE_MSG), anotherPeer); err != nil {
 		log.Println("send handshake:", err)
 	}
@@ -194,7 +194,7 @@ func bidirectionHole(srcAddr *net.UDPAddr, anotherAddr *net.UDPAddr) {
 		fmt.Println(err)
 	}
 	defer conn.Close()
-	// 向另一个peer发送一条udp消息(对方peer的nat设备会丢弃该消息,非法来源),用意是在自身的nat设备打开一条可进入的通道,这样对方peer就可以发过来udp消息
+	// Send a UDP message to another peer (the NAT device of the other peer will discard the message, which is an illegal source) to open an accessible channel in its own NAT device, so that the other peer can send UDP messages
 	if _, err = conn.Write([]byte(HAND_SHAKE_MSG)); err != nil {
 		log.Println("send handshake:", err)
 	}
@@ -393,7 +393,7 @@ func startServiceTcp() {
 }
 
 func startClientUDP() {
-	// 创建连接
+	// Create connection
 	socket, err := net.DialUDP("udp", nil, &net.UDPAddr{
 		IP:   net.IPv4(0, 0, 0, 0),
 		Port: 8181,
@@ -404,7 +404,7 @@ func startClientUDP() {
 	}
 	defer socket.Close()
 
-	// 发送数据
+	// send data
 	senddata := []byte("hello server!")
 	_, err = socket.Write(senddata)
 	if err != nil {
@@ -412,7 +412,7 @@ func startClientUDP() {
 		return
 	}
 
-	// 接收数据
+	// receive data 
 	data := make([]byte, 4096)
 	read, remoteAddr, err := socket.ReadFromUDP(data)
 	if err != nil {
@@ -425,7 +425,7 @@ func startClientUDP() {
 
 func startServiceUDP() {
 
-	// 创建监听
+	// Create listener
 	socket, err := net.ListenUDP("udp4", &net.UDPAddr{
 		IP:   net.IPv4(0, 0, 0, 0),
 		Port: 8181,
@@ -437,7 +437,7 @@ func startServiceUDP() {
 	defer socket.Close()
 
 	for {
-		// 读取数据
+		// Read data
 		data := make([]byte, 4096)
 		read, remoteAddr, err := socket.ReadFromUDP(data)
 		if err != nil {
@@ -447,7 +447,7 @@ func startServiceUDP() {
 		fmt.Println(read, remoteAddr)
 		fmt.Printf("%s\n\n", data)
 
-		// 发送数据
+		// send data
 		senddata := []byte("hello client!")
 		_, err = socket.WriteToUDP(senddata, remoteAddr)
 		if err != nil {

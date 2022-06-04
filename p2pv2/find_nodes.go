@@ -14,13 +14,13 @@ import (
  */
 func (p *P2P) findNodes() {
 	if p.Config.DisableFindNodes {
-		// 关闭搜寻节点
+		// Close discovery node
 		return
 	}
 
 	swapped := atomic.CompareAndSwapUint32(&p.isInFindingNode, 0, 1)
 	if !swapped {
-		return // 正在寻找节点间
+		return // Looking for inter node
 	}
 
 	tarnodes := make([]*fdNodes, 0, 9)
@@ -28,10 +28,10 @@ func (p *P2P) findNodes() {
 
 	alradySuckAddrStrs := make(map[string]bool)
 
-	// 查找
+	// lookup
 	p.doFindNearestPublicNodes(nil, nil, &tarnodes, fdndmax, alradySuckAddrStrs)
 
-	// 按顺序连接
+	// Connect in sequence
 	fdnodenum := len(tarnodes)
 	realconnectnum := 0 // 真实发起连接的节点数量
 	fmt.Printf("[P2P] ")
@@ -39,16 +39,16 @@ func (p *P2P) findNodes() {
 		fmt.Printf("find %d nearest public nodes to update topology table, ", fdnodenum)
 	}
 
-	// 依次判断亲源和连接
+	// Determine the parent source and connection in turn
 	for i := fdnodenum - 1; i >= 0; i-- {
 		node := tarnodes[i]
 		//fmt.Println(node.TcpAddr.String())
-		// 判断拓扑图更新状态
+		// Judge the update status of topology map
 		if isCanUpdateTopologyDistancePeerIDTable(p.peerSelf.ID, node.ID, p.BackboneNodeTable, p.Config.BackboneNodeTableSizeMax) {
-			// 拓扑亲源关系检查通过，发起连接
+			// Topology parent-source relationship check passed, initiate connection
 			// fmt.Println(len(p.BackboneNodeTable), p.Config.BackboneNodeTableSizeMax, hex.EncodeToString(node.ID))
 			if realconnectnum == 0 {
-				fmt.Printf("\n") // 打印美观
+				fmt.Printf("\n") // Beautiful printing
 			}
 			realconnectnum++
 			p.ConnectNodeInitiative(node.TcpAddr)
@@ -57,15 +57,15 @@ func (p *P2P) findNodes() {
 	}
 	if realconnectnum > 0 {
 		time.Sleep(time.Second * 2)
-		fmt.Printf("[P2P] ") // 打印美观
+		fmt.Printf("[P2P] ") // Beautiful printing
 	}
-	// 打印最新的连接情况
+	// Print the latest connection
 	p.PeerChangeMux.RLock()
 	fmt.Printf("connected peers: %d public, %d private, total: %d nodes, %d conns.\n",
 		len(p.BackboneNodeTable), len(p.OrdinaryNodeTable), p.AllNodesLen, p.TemporaryConnsLen)
 	p.PeerChangeMux.RUnlock()
 
-	// 节点全部查询成功
+	// All nodes are queried successfully
 	atomic.CompareAndSwapUint32(&p.isInFindingNode, 1, 0)
 }
 
@@ -97,57 +97,57 @@ func (p *P2P) readEffectivePublicNodesFromTcpTimeout(addr *net.TCPAddr, waitsec 
 func (p *P2P) readEffectivePublicNodesFromTcpTimeoutClose(addr *net.TCPAddr, closesec int64) []*fdNodes {
 
 	gotNodes := make([]*fdNodes, 0)
-	// 尝试连接
+	// Try to connect
 	ckpubconn, e1 := dialTimeoutWithHandshakeSignal("tcp", addr.String(), time.Second*5)
 	if e1 != nil {
 		return gotNodes
 	}
 	go func() {
-		// 10 秒后关闭
+		// Close after 10 seconds
 		time.Sleep(time.Second * time.Duration(closesec))
 		ckpubconn.Close()
 	}()
-	// 请求最近的公网节点
+	// Request the nearest public network node
 	e0 := sendTcpMsg(ckpubconn, P2PMsgTypeRequestNearestPublicNodes, nil)
 	if e0 != nil {
 		//fmt.Println(e0)
-		ckpubconn.Close() // 关闭
+		ckpubconn.Close() // close
 		return gotNodes
 	}
 	ndn := make([]byte, 1)
 	_, e2 := io.ReadFull(ckpubconn, ndn)
 	if e2 != nil {
 		//fmt.Println(e2)
-		ckpubconn.Close() // 关闭
+		ckpubconn.Close() // close
 		return gotNodes
 	}
 	ndnum := int(ndn[0])
 	if ndnum == 0 || ndnum > 200 {
-		ckpubconn.Close() // 关闭
+		ckpubconn.Close() // close
 		return gotNodes
 	}
 	nodebts := make([]byte, ndnum*FindNodeSize) // ip + port + pid
 	_, e3 := io.ReadFull(ckpubconn, nodebts)
 	if e3 != nil {
 		//fmt.Println(e3)
-		ckpubconn.Close() // 关闭
+		ckpubconn.Close() // close
 		return gotNodes
 	}
-	ckpubconn.Close() // 关闭
-	// 解析nodebts
+	ckpubconn.Close() // close
+	// Parse nodebts
 	//fmt.Println(nodebts)
 	nodes := parseFindNodesFromBytes(nodebts)
 	//fmt.Println(nodes[0].ID)
-	// 排除掉我已经连接的公网节点，避免死循环，写入关系表
+	// Exclude the public network nodes that I have connected to, avoid dead circulation, and write the relationship table
 	sortids := make([]PeerID, 0)
 	for _, nd := range nodes {
 		if p.getPeerByID(nd.ID) == nil {
 			if istok, _, newids, _ := insertUpdateTopologyDistancePeerIDTable(p.peerSelf.ID, nd.ID, sortids, 200); istok {
-				sortids = newids // 插入
+				sortids = newids // insert
 			}
 		}
 	}
-	// 按亲源关系排序节点
+	// Sort nodes by parent source relationship
 	for _, id := range sortids {
 		for _, v := range nodes {
 			if bytes.Compare(v.ID, id) == 0 {
@@ -172,16 +172,16 @@ func (p *P2P) doFindNearestPublicNodes(addr *net.TCPAddr, tarpid PeerID, tarnode
 
 	//fmt.Println("doFindNearestPublicNodes", addrstr, tarpid)
 
-	// 判断添加
+	// Judge add
 	if addr != nil && tarpid != nil {
-		// 避免自己
+		// Avoid yourself
 		if bytes.Compare(p.Config.ID, tarpid) == 0 {
-			return // 查找到自己，返回
+			return // Find yourself and return
 		}
 		hsp := p.getPeerByID(tarpid)
-		// 加上未连接的节点
+		// Add unconnected nodes
 		if hsp == nil {
-			// 并且去重
+			// And weight removal
 			ishave := false
 			for _, v := range *tarnodes {
 				if bytes.Compare(v.ID, tarpid) == 0 {
@@ -199,11 +199,11 @@ func (p *P2P) doFindNearestPublicNodes(addr *net.TCPAddr, tarpid PeerID, tarnode
 		}
 	}
 
-	// 数量
+	// quantity
 	if len(*tarnodes) >= fdndmax {
 		return
 	}
-	// 查询
+	// query
 	gotNodes := make([]*fdNodes, 0)
 	if addr == nil {
 		// root node
@@ -217,16 +217,16 @@ func (p *P2P) doFindNearestPublicNodes(addr *net.TCPAddr, tarpid PeerID, tarnode
 			}
 		}
 	} else {
-		// tcp连接读取公网节点, 10 秒timeout
-		// 发送获取公网节点列表消息
+		// TCP connection reads public network nodes, 10 seconds timeout
+		// Send the message to get the public network node list
 		gotNodes = p.readEffectivePublicNodesFromTcpTimeout(addr, 10)
 	}
 
-	// 递归查找
+	// recursive lookup 
 	for _, v := range gotNodes {
 		//fmt.Println("p.findNodes()", hex.EncodeToString(v.ID), v.TcpAddr.String())
 		p.doFindNearestPublicNodes(v.TcpAddr, v.ID, tarnodes, fdndmax, alradySuckAddrStrs)
-		// 检查数量
+		// Inspection quantity
 		if len(*tarnodes) >= fdndmax {
 			break
 		}
