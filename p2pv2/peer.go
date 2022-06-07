@@ -26,14 +26,14 @@ type Peer struct {
 
 	knownPeerKnowledgeDuplicateRemoval *sync.Map // map[string]set[string(byte)]
 
-	createTime *time.Time // 创建时间
-	activeTime *time.Time // 上次活跃时间
+	createTime *time.Time // Creation time
+	activeTime *time.Time // Last active time
 
-	// 表示正在发生替换的连接
-	RemoveImmediately    bool // 由于关系表已满且拓扑太远而立即被移除
-	RemoveActiveOvertime bool // 失活
-	RemoveFarawayClose   bool // 遥远
-	RemoveReplacing      bool // 替换
+	// Indicates that a replacement connection is occurring
+	RemoveImmediately    bool // Removed immediately because the relationship table is full and the topology is too far away
+	RemoveActiveOvertime bool // Inactivation
+	RemoveFarawayClose   bool // distant
+	RemoveReplacing      bool // replace
 }
 
 func NewEmptyPeer(cmtr interfaces.P2PMsgCommunicator, msgdlr interfaces.P2PMsgDataHandler) *Peer {
@@ -58,7 +58,7 @@ func NewEmptyPeer(cmtr interfaces.P2PMsgCommunicator, msgdlr interfaces.P2PMsgDa
 
 func (p *Peer) notifyConnect() {
 	if p.RemoveImmediately {
-		return // 立即移除节点，不打印输出，也不通知
+		return // Remove nodes immediately without printing or notifying
 	}
 	pubinfo := ""
 	if p.PublicIpPort != nil {
@@ -68,22 +68,22 @@ func (p *Peer) notifyConnect() {
 		pubinfo += " connect update"
 	} else {
 		pubinfo += " id:" + hex.EncodeToString(p.ID) + " connect"
-		// 外部消息
+		// External messages
 		if p.msghandler != nil {
 			p.msghandler.OnConnected(p.communicator, p)
 		}
 	}
-	// 打印信息
+	// Print information
 	fmt.Println("[Peer] " + p.Name + pubinfo + ".")
 	p.RemoveReplacing = false // reset
 }
 
 func (p *Peer) notifyClose() {
 	if p.RemoveImmediately {
-		return // 立即移除节点，不打印输出，也不通知
+		return // Remove nodes immediately without printing or notifying
 	}
 	if p.RemoveReplacing {
-		return // 被替换的节点，不打印关闭信息，只打印输出
+		return // For the replaced node, the closing information is not printed, and only the output is printed
 	}
 	pubinfo := ""
 	if p.PublicIpPort != nil {
@@ -95,7 +95,7 @@ func (p *Peer) notifyClose() {
 		pubinfo += " topology faraway"
 	}
 	fmt.Println("[Peer] " + p.Name + pubinfo + " disconnect.")
-	// 外部消息
+	// External messages
 	if p.msghandler != nil {
 		p.msghandler.OnDisconnected(p)
 	}
@@ -107,7 +107,7 @@ func (p *Peer) NameBytes() []byte {
 	return nbts
 }
 
-// 拷贝信息
+// Copy information
 func (p *Peer) ReplacingCopyInfo(oldpeer *Peer) {
 	p.RemoveReplacing = true
 	oldpeer.RemoveReplacing = true

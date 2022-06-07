@@ -10,7 +10,7 @@ func (p *P2P) getPeerByID(pid PeerID) *Peer {
 	return nil
 }
 
-// 加入指定的节点表
+// Join the specified node table
 func (p *P2P) addPeerIntoTargetTable(tables *[]PeerID, maxsize int, peer *Peer) {
 	p.PeerChangeMux.Lock()
 	defer p.PeerChangeMux.Unlock()
@@ -18,25 +18,25 @@ func (p *P2P) addPeerIntoTargetTable(tables *[]PeerID, maxsize int, peer *Peer) 
 	p.addPeerIntoTargetTableUnsafe(tables, maxsize, peer)
 }
 
-// 加入指定的节点表
+// Join the specified node table
 func (p *P2P) addPeerIntoTargetTableUnsafe(tables *[]PeerID, maxsize int, peer *Peer) bool {
-	var addSuccessfully = true // 是否成功添加，没有立即被移除
-	// 插入
+	var addSuccessfully = true // Whether it was added successfully, but not removed immediately
+	// insert
 	istok, _, newtables, dropid := insertUpdateTopologyDistancePeerIDTable(p.peerSelf.ID, peer.ID, *tables, maxsize)
 
 	if istok {
-		*tables = newtables // 更新
+		*tables = newtables // to update
 	}
 
-	// 移除多余的
+	// Remove excess
 	if dropid != nil {
 		droppeer := p.getPeerByID(dropid)
 		if droppeer != nil {
-			droppeer.RemoveFarawayClose = true // 拓扑图太远
+			droppeer.RemoveFarawayClose = true // Topology too far
 			if bytes.Compare(droppeer.ID, peer.ID) == 0 {
-				// 拓扑图太远，立即被移除了
+				// The topology is too far away. It was removed immediately
 				droppeer.RemoveImmediately = true //立即移除
-				addSuccessfully = false           // 添加失败
+				addSuccessfully = false           // Add failed
 			}
 			droppeer.Disconnect()
 		}
@@ -44,7 +44,7 @@ func (p *P2P) addPeerIntoTargetTableUnsafe(tables *[]PeerID, maxsize int, peer *
 	return addSuccessfully
 }
 
-// 加入陌生节点
+// Join a strange node
 func (p *P2P) addPeerIntoUnfamiliarTable(peer *Peer) {
 	p.PeerChangeMux.Lock()
 	defer p.PeerChangeMux.Unlock()
@@ -52,7 +52,7 @@ func (p *P2P) addPeerIntoUnfamiliarTable(peer *Peer) {
 	p.addPeerIntoUnfamiliarTableUnsafe(peer)
 }
 
-// 提升等级
+// Upgrade level
 func (p *P2P) upgradeOneUnfamiliarNodeLevel() {
 	p.PeerChangeMux.Lock()
 	defer p.PeerChangeMux.Unlock()
@@ -60,38 +60,38 @@ func (p *P2P) upgradeOneUnfamiliarNodeLevel() {
 	p.upgradeOneUnfamiliarNodeLevelUnsafe()
 }
 
-// 提升等级
+// Upgrade level
 func (p *P2P) upgradeOneUnfamiliarNodeLevelUnsafe() {
 	if len(p.UnfamiliarNodesTable) > 0 {
-		// 删除第一个最早的
+		// Delete first oldest
 		olderone := p.UnfamiliarNodesTable[0]
 		p.UnfamiliarNodesTable = p.UnfamiliarNodesTable[1:]
-		// 是否为公网节点
+		// Whether it is a public network node
 		droppeer := p.getPeerByID(olderone)
 		if droppeer == nil {
-			return // 返回
+			return // return
 		}
 		if droppeer.PublicIpPort != nil {
-			p.addPeerIntoTargetTableUnsafe(&p.BackboneNodeTable, p.Config.BackboneNodeTableSizeMax, droppeer) // 公网节点
+			p.addPeerIntoTargetTableUnsafe(&p.BackboneNodeTable, p.Config.BackboneNodeTableSizeMax, droppeer) // Public network node
 		} else {
-			p.addPeerIntoTargetTableUnsafe(&p.OrdinaryNodeTable, p.Config.OrdinaryNodeTableSizeMax, droppeer) // 普通节点
+			p.addPeerIntoTargetTableUnsafe(&p.OrdinaryNodeTable, p.Config.OrdinaryNodeTableSizeMax, droppeer) // Common node
 		}
 	}
 }
 
-// 加入陌生节点
+// Join a strange node
 func (p *P2P) addPeerIntoUnfamiliarTableUnsafe(peer *Peer) {
-	// 加入
+	// join
 	p.UnfamiliarNodesTable = append(p.UnfamiliarNodesTable, peer.ID)
-	// 判断满员
+	// Judge full
 	if len(p.UnfamiliarNodesTable) > p.Config.UnfamiliarNodeTableSizeMax {
-		p.upgradeOneUnfamiliarNodeLevelUnsafe() // 提升一个节点的等级
+		p.upgradeOneUnfamiliarNodeLevelUnsafe() // Raise the level of a node
 	}
 }
 
 //
 func (p *P2P) addPeerAllNodesUnsafe(peer *Peer) {
-	// 加入
+	// join
 	peerId := peer.ID
 	_, have := p.AllNodes.LoadOrStore(string(peerId), peer)
 	if !have {
@@ -108,7 +108,7 @@ func (p *P2P) dropPeerByConnID(cid uint64) {
 
 func (p *P2P) dropPeerByConnIDUnsafe(cid uint64) {
 	var peer *Peer = nil
-	// 查询
+	// query
 	p.AllNodes.Range(func(key, value interface{}) bool {
 		p := value.(*Peer)
 		if p != nil {
@@ -119,17 +119,17 @@ func (p *P2P) dropPeerByConnIDUnsafe(cid uint64) {
 		}
 		return true
 	})
-	// 移除
+	// remove
 	if peer != nil {
 		pid := peer.ID
 		if rmok, newtbs := removePeerIDFromTable(p.BackboneNodeTable, pid); rmok {
-			p.BackboneNodeTable = newtbs // 更新表
+			p.BackboneNodeTable = newtbs // Update table
 		}
 		if rmok, newtbs := removePeerIDFromTable(p.OrdinaryNodeTable, pid); rmok {
-			p.OrdinaryNodeTable = newtbs // 更新表
+			p.OrdinaryNodeTable = newtbs // Update table
 		}
 		if rmok, newtbs := removePeerIDFromTable(p.UnfamiliarNodesTable, pid); rmok {
-			p.UnfamiliarNodesTable = newtbs // 更新表
+			p.UnfamiliarNodesTable = newtbs // Update table
 		}
 		p.AllNodes.Delete(string(pid))
 		p.AllNodesLen -= 1

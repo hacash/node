@@ -87,7 +87,7 @@ func GetBlockHashList(blockchain interfaces.BlockChain, peer interfaces.P2PMsgPe
 		}
 		if equalForNow {
 			rollbackToHeight = curhei
-			break // 检查分叉完成
+			break // Check fork completion
 		}
 		i++
 	}

@@ -9,34 +9,34 @@ func (p *P2P) loop() {
 	pingAllNodesTiker := time.NewTicker(time.Minute * 3)
 	checkNodesActiveTiker := time.NewTicker(time.Minute * 5)
 	findNodesTiker := time.NewTicker(time.Minute * 77) // 77分钟 findnodes 一次
-	//findNodesTiker := time.NewTicker(time.Second * 15)            // 测试
+	// findNodesTiker:= time.NewTicker(time.Second * 15)            // 测试
 	upgradeNodeLevelTiker := time.NewTicker(time.Second * 70) // 提升节点等级 70s
-	//forceReconnectBootNodesTiker := time.NewTicker(time.Hour * 8) // 8小时强制boot重连一次
+	// forceReconnectBootNodesTiker:= time.NewTicker(time.Hour * 8) // 8小时强制boot重连一次
 
-	// 任务
+	// task
 	for {
 
 		select {
 
 		case <-upgradeNodeLevelTiker.C:
 			if len(p.BackboneNodeTable) == 0 {
-				// 没有公网节点连接时，尝试连接 Static Boot Nodes
+				// Try to connect to static boot nodes when no public nodes are connected
 				p.tryConnectToStaticBootNodes()
 			} else {
 				ct := time.Now()
-				// 提升节点等级
-				// 将临时区域内连接超过半小时的节点提升到公网或私网表
+				// Upgrade node level
+				// Promote the nodes in the temporary area that have been connected for more than half an hour to the public or private network table
 				p.PeerChangeMux.Lock()
 				if len(p.UnfamiliarNodesTable) > 0 {
 					curpid := p.UnfamiliarNodesTable[0]
 					peer := p.getPeerByID(curpid)
 					if peer == nil {
-						// 删除无效的
+						// Delete invalid
 						p.UnfamiliarNodesTable = p.UnfamiliarNodesTable[1:]
 					} else {
-						// 检查时间, 已经连接30分钟
+						// Check time, connected for 30 minutes
 						if peer.createTime.Add(time.Minute * 30).Before(ct) {
-							p.upgradeOneUnfamiliarNodeLevelUnsafe() // 提升最后节点的等级
+							p.upgradeOneUnfamiliarNodeLevelUnsafe() // Increase the level of the last node
 						}
 					}
 				}
@@ -50,12 +50,12 @@ func (p *P2P) loop() {
 		//	break
 
 		case <-pingAllNodesTiker.C:
-			// 给所有节点发送ping消息
+			// Send Ping message to all nodes
 			ct := time.Now()
 			p.AllNodes.Range(func(key, value interface{}) bool {
 				peer := value.(*Peer)
 				if peer != nil {
-					// 超过5分钟没有活跃的节点
+					// No active nodes for more than 5 minutes
 					p.PeerChangeMux.RLock()
 					if peer.activeTime.Add(time.Minute * 5).Before(ct) {
 						go sendTcpMsg(peer.conn, P2PMsgTypePing, nil) // send ping
@@ -66,13 +66,13 @@ func (p *P2P) loop() {
 			})
 
 		case <-checkNodesActiveTiker.C:
-			// 检查所有节点的活跃度
+			// Check the activity of all nodes
 			ct := time.Now()
 			p.AllNodes.Range(func(key, value interface{}) bool {
 				peer := value.(*Peer)
 				if peer != nil {
 					if peer.activeTime.Add(time.Minute * 10).Before(ct) {
-						// 10分钟无消息，为失去活跃的节点
+						// If there is no message for 10 minutes, the node is inactive
 						peer.RemoveActiveOvertime = true
 						peer.Disconnect()
 					}
@@ -82,10 +82,10 @@ func (p *P2P) loop() {
 
 		case <-findNodesTiker.C:
 			if len(p.BackboneNodeTable) == 0 {
-				// 没有公网节点连接时，尝试连接 Static Boot Nodes
+				// Try to connect to static boot nodes when no public nodes are connected
 				p.tryConnectToStaticBootNodes()
 			} else {
-				// 寻找最近的节点
+				// Find nearest node
 				p.findNodes()
 			}
 		}

@@ -17,8 +17,8 @@ func (hn *Backend) broadcastNewBlockDiscover(block interfaces.Block) {
 	blkhxstr := string(block.Hash())
 	//fmt.Println("broadcastNewBlockDiscover:", 3)
 	if hn.p2p.CheckKnowledge("block", blkhxstr) {
-		// 来自 discover 的区块已经添加知识并且广播
-		// 此处仅仅广播我挖出的区块
+		// The block from discover has added knowledge and broadcast
+		// Only the blocks I dug up are broadcast here
 		return
 	}
 	hn.p2p.AddKnowledge("block", blkhxstr)

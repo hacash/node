@@ -14,7 +14,7 @@ const (
 	time_format_layout = "01/02 15:04:05"
 )
 
-// 当前正在执行插入的区块高度
+// Block height currently executing insert
 var blockDiscoverMutex sync.Mutex
 var transactionSubmitMutex sync.Mutex
 
@@ -23,7 +23,7 @@ func GetBlockDiscover(p2p interfaces.P2PManager, msgcator interfaces.P2PMsgCommu
 	defer blockDiscoverMutex.Unlock()
 
 	//fmt.Println("GetBlockDiscover", 1)
-	// 先解析区块头，以提升并发收到区块时的性能
+	// Parse the block header first to improve the performance when blocks are received concurrently
 	blockhead, _, e0 := blocks.ParseExcludeTransactions(msgbody, 0)
 	if e0 != nil {
 		return // error end
@@ -31,13 +31,13 @@ func GetBlockDiscover(p2p interfaces.P2PManager, msgcator interfaces.P2PMsgCommu
 	//fmt.Println("GetBlockDiscover", 2)
 	blockhxstr := string(blockhead.Hash())
 	if p2p.CheckKnowledge("block", blockhxstr) {
-		return // 已经收到区块
+		return // Block received
 	}
 	//fmt.Println("GetBlockDiscover", 3)
-	// 添加知晓区块，在“插入区块成功”的事件处就不重复广播了
+	// Add a known block, and the broadcast will not be repeated at the event of "successful block insertion"
 	p2p.AddKnowledge("block", blockhxstr)
 	peer.AddKnowledge("block", blockhxstr)
-	// 解析完整区块
+	// Parse complete block
 	block, _, e1 := blocks.ParseBlock(msgbody, 0)
 	if e1 != nil {
 		return // error end
@@ -54,13 +54,13 @@ func GetBlockDiscover(p2p interfaces.P2PManager, msgcator interfaces.P2PMsgCommu
 	if block.GetHeight() > mylastblockheight+1 {
 		fmt.Printf("need height %d but got %d, sync the new blocks ...\n", mylastblockheight+1, block.GetHeight())
 		// check hash fork
-		// 从我的成熟区块高度开始同步
+		// Sync from my mature block height
 		msgParseSendRequestBlocks(peer, immblk.GetHeight()+1)
 		//msgParseSendRequestBlockHashList(peer, 8, immblk.GetHeight())
 		return
 	} else if block.GetHeight() <= mylastblockheight-blockchainv3.ImmatureBlockMaxLength {
 		//peer.Disconnect()
-		// 不接受低于或等于已成熟确认的区块高度数据
+		// Block height data lower than or equal to mature confirmation is not accepted
 		fmt.Printf("need height %d but got %d, ignore.\n", mylastblockheight+1, block.GetHeight())
 		return // error block height
 	}
@@ -75,7 +75,7 @@ func GetBlockDiscover(p2p interfaces.P2PManager, msgcator interfaces.P2PMsgCommu
 	//fmt.Println("insert time millisecond: ", testInsertTimeEnd.Sub(testInsertTimeStart ).Milliseconds())
 	if err == nil {
 		fmt.Printf("ok.\n")
-		// 插入成功，无论是否为分叉块，都以最快的速度广播区块出去
+		// After successful insertion, the block will be broadcasted out at the fastest speed regardless of whether it is a forked block or not
 		msgcator.BroadcastDataMessageToUnawarePeers(MsgTypeDiscoverNewBlock, msgbody, "block", blockhxstr)
 	} else {
 		//fmt.Printf("\n\n---------------\n-- %s\n---------------\n\n", err.Error())

@@ -19,8 +19,8 @@ type P2PConfig struct {
 	StaticHnodeAddrs []*net.TCPAddr // IP:port ...
 	TCPListenPort    int
 
-	BootNodeFastSync bool // 引导节点快速同步
-	DisableFindNodes bool // 关闭查找更多节点
+	BootNodeFastSync bool // Boot node fast synchronization
+	DisableFindNodes bool // Turn off find more nodes
 
 	// 骨干/超级/公网 节点 连接表大小
 	BackboneNodeTableSizeMax int `json:"backbone_node_table_size_max"`
