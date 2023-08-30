@@ -65,9 +65,10 @@ func GetBlockDiscover(p2p interfaces.P2PManager, msgcator interfaces.P2PMsgCommu
 		return // error block height
 	}
 	// note
-	fmt.Printf("discover new block height: %d, txs: %d, hash: %s, time: %s, try to inserting ... ",
+	fmt.Printf("[%s] discover new block height: %d, txs: %d, hash: %s, time: %s, try to inserting ... ",
+		time.Now().Format(time_format_layout),
 		block.GetHeight(), block.GetCustomerTransactionCount(), block.Hash().ToHex(),
-		time.Unix(int64(block.GetTimestamp()), 0).Format(time_format_layout))
+		time.Unix(int64(block.GetTimestamp()), 0).Format("15:04:05"))
 	// do insert
 	//testInsertTimeStart := time.Now()
 	err := blockchain.GetChainEngineKernel().InsertBlock(block, "discover")
