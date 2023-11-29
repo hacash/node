@@ -21,8 +21,10 @@ func GetBlocksData(p2p interfaces.P2PManager, cmtr interfaces.P2PMsgCommunicator
 	realEndHeight := uint64(0)
 	allBlockDatas := msgbody[24:]
 	alldtslen := len(allBlockDatas)
+	perok := fmt.Sprintf("%.2f%%", (float64(endHeight) / float64(lastestHeight) * 100))
+	//fmt.Println(endHeight, lastestHeight)
 	// print
-	fmt.Print("got blocks: ", startHeight, " ~ ", endHeight, ", inserting... ")
+	fmt.Print("got blocks(", perok, "): ", startHeight, " ~ ", endHeight, ", inserting... ")
 	// parse block
 	seek := uint32(0)
 	for {
